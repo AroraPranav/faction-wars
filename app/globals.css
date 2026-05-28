@@ -2,7 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Instrument+Serif:ital@0;1&display=swap');
+@import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700,900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800;900&display=swap');
 
 :root {
   --bg: #0a0608;
@@ -10,9 +11,9 @@
   --card: #08060700;
   --border: rgba(255, 255, 255, 0.06);
   --border-strong: rgba(255, 255, 255, 0.11);
-  --text: #ece8e8;
-  --muted: rgba(236, 232, 232, 0.55);
-  --faint: rgba(236, 232, 232, 0.32);
+  --text: #EBDFC4;
+  --muted: rgba(235, 223, 196, 0.55);
+  --faint: rgba(235, 223, 196, 0.32);
   --accent: #E04848;
   --accent-soft: #C13838;
   --gold: #E8B863;
@@ -22,8 +23,9 @@ html, body { background-color: var(--bg); }
 
 body {
   color: var(--text);
-  font-family: 'Inter', system-ui, sans-serif;
-  font-feature-settings: 'ss01', 'cv11';
+  font-family: 'Satoshi', 'Inter', system-ui, sans-serif;
+  font-feature-settings: 'ss03', 'ss04', 'cv11';
+  letter-spacing: -0.005em;
   -webkit-font-smoothing: antialiased;
   background-color: #0a0608;
   background-image:
@@ -33,7 +35,12 @@ body {
   background-attachment: fixed;
 }
 
-.font-serif { font-family: 'Instrument Serif', 'Times New Roman', serif; font-feature-settings: 'liga', 'dlig'; }
+.font-serif {
+  font-family: 'Cinzel', 'Trajan Pro', 'Times New Roman', serif;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
 
 @layer components {
   .card {

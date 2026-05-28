@@ -4,6 +4,11 @@ import { useSearchParams } from 'next/navigation';
 import { Game, Team, BribeRequest, ResolvedRound } from '@/lib/types';
 import { ACTION_META, BRIBE_MENU } from '@/lib/utils';
 import { WORLD_EVENTS, getEvent } from '@/lib/events';
+import {
+  Swords, Coin, Eye, EyeOff, Clipboard, Check, X as XIcon,
+  Hourglass, Dice, Megaphone, Spyglass, Sparkle, Crown, Trophy,
+  Skull, Shield, Handshake, Bolt, Gear, Undo, Warning,
+} from '@/components/icons';
 
 export default function GMPage({ params }: { params: { gmToken: string } }) {
   const { gmToken } = params;
@@ -147,7 +152,7 @@ export default function GMPage({ params }: { params: { gmToken: string } }) {
     return (
       <main className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <p className="text-red-400 text-xl mb-2">⚠️ {error}</p>
+          <p className="text-red-400 text-xl mb-2 inline-flex items-center gap-2"><Warning size={20} /> {error}</p>
           <p className="text-white/40 text-sm">Make sure you have the correct GM link.</p>
         </div>
       </main>
@@ -157,9 +162,9 @@ export default function GMPage({ params }: { params: { gmToken: string } }) {
   if (!game) {
     return (
       <main className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-center">
-          <div className="text-4xl mb-3">⚔️</div>
-          <p className="text-white/40">Loading GM Console...</p>
+        <div className="animate-pulse text-center text-white/40">
+          <Swords size={36} className="mx-auto mb-3" />
+          <p>Loading GM Console…</p>
         </div>
       </main>
     );
@@ -185,10 +190,10 @@ export default function GMPage({ params }: { params: { gmToken: string } }) {
               <span className="text-white/30 text-xs font-bold w-4">{i + 1}</span>
               <span className="w-3 h-3 rounded-full" style={{ backgroundColor: team.color }} />
               <span className="font-bold text-sm">{team.name}</span>
-              {team.eliminated && <span className="badge bg-red-900/50 text-red-400">💀 out</span>}
-              {team.immune && <span className="badge bg-blue-900/50 text-blue-400">🔵 immune</span>}
+              {team.eliminated && <span className="badge bg-red-900/50 text-red-400 inline-flex items-center gap-1"><Skull size={11} /> out</span>}
+              {team.immune && <span className="badge bg-blue-900/50 text-blue-400 inline-flex items-center gap-1"><Shield size={11} /> immune</span>}
               {team.tradePartners.length > 0 && (
-                <span className="badge bg-green-900/50 text-green-400">🤝</span>
+                <span className="badge bg-green-900/50 text-green-400 inline-flex items-center"><Handshake size={11} /></span>
               )}
             </div>
             <div className="text-right">
@@ -204,10 +209,10 @@ export default function GMPage({ params }: { params: { gmToken: string } }) {
             />
           </div>
           <div className="flex items-center justify-between text-xs text-white/40">
-            <span>🪙 {team.bribes} bribes</span>
+            <span className="inline-flex items-center gap-1.5"><Coin size={12} /> {team.bribes} bribes</span>
             {game.currentActions[team.id] && (
-              <span className={`font-bold uppercase ${ACTION_META[game.currentActions[team.id].type]?.color}`}>
-                ✓ {game.currentActions[team.id].type}
+              <span className={`font-bold uppercase inline-flex items-center gap-1 ${ACTION_META[game.currentActions[team.id].type]?.color}`}>
+                <Check size={12} /> {game.currentActions[team.id].type}
               </span>
             )}
           </div>
@@ -222,16 +227,16 @@ export default function GMPage({ params }: { params: { gmToken: string } }) {
       return (
         <div className="space-y-4">
           <div className="card text-center py-8">
-            <div className="text-4xl mb-3">🕐</div>
-            <h3 className="font-bold text-lg">Waiting for teams to join...</h3>
+            <Hourglass size={32} className="mx-auto mb-3 text-white/55" />
+            <h3 className="font-bold text-lg">Waiting for teams to join…</h3>
             <p className="text-white/40 text-sm mt-1">Share the join link with your players.</p>
           </div>
           <div className="card">
             <p className="label">Join Link</p>
             <div className="flex gap-2">
               <code className="input text-sm flex-1 truncate">{typeof window !== 'undefined' ? `${window.location.origin}/join/${gameCode}` : `/join/${gameCode}`}</code>
-              <button className="btn-secondary text-sm px-3" onClick={copyJoinLink}>
-                {copied ? '✓' : 'Copy'}
+              <button className="btn-secondary text-sm px-3 inline-flex items-center gap-1.5" onClick={copyJoinLink}>
+                {copied ? <><Check size={13} /> Copied</> : <><Clipboard size={13} /> Copy</>}
               </button>
             </div>
             <p className="text-white/30 text-xs mt-2">Game Code: <span className="font-mono font-bold text-white/60 tracking-widest">{gameCode}</span></p>
@@ -261,21 +266,21 @@ export default function GMPage({ params }: { params: { gmToken: string } }) {
               )}
 
               <button
-                className="w-full py-2 rounded-lg text-sm font-medium border border-white/10 text-white/60 hover:bg-white/5"
+                className="w-full py-2 rounded-lg text-sm font-medium border border-white/10 text-white/60 hover:bg-white/5 inline-flex items-center justify-center gap-2"
                 onClick={() => {
                   const pool = WORLD_EVENTS.filter(e => e.id !== 'none');
                   setSelectedEvent(pool[Math.floor(Math.random() * pool.length)].id);
                 }}
               >
-                🎲 Randomize Event
+                <Dice size={14} /> Randomize Event
               </button>
 
               <button
-                className="btn-primary w-full py-3"
+                className="btn-primary w-full py-3 inline-flex items-center justify-center gap-2"
                 onClick={startRound}
                 disabled={startingRound || (selectedEvent === 'shield_dome' && !shieldTarget)}
               >
-                {startingRound ? 'Starting...' : `⚔️ Start Game (${game.teams.length} teams ready)`}
+                {startingRound ? 'Starting…' : <><Swords size={16} /> Start Game ({game.teams.length} teams ready)</>}
               </button>
             </div>
           )}
@@ -326,11 +331,11 @@ export default function GMPage({ params }: { params: { gmToken: string } }) {
           </div>
 
           <button
-            className="btn-primary w-full py-3"
+            className="btn-primary w-full py-3 inline-flex items-center justify-center gap-2"
             onClick={startRound}
             disabled={startingRound || (selectedEvent === 'shield_dome' && !shieldTarget)}
           >
-            {startingRound ? 'Starting...' : `▶ Start Round ${game.currentRound + 1}`}
+            {startingRound ? 'Starting…' : <><Bolt size={16} /> Start Round {game.currentRound + 1}</>}
           </button>
         </div>
       );
@@ -393,7 +398,7 @@ export default function GMPage({ params }: { params: { gmToken: string } }) {
           {/* Declarations for Civil Unrest */}
           {game.currentWorldEvent === 'civil_unrest' && Object.keys(game.currentDeclarations).length > 0 && (
             <div className="card">
-              <p className="text-orange-400 text-xs font-bold uppercase tracking-wider mb-2">📢 Civil Unrest Declarations</p>
+              <p className="text-orange-400 text-xs font-bold uppercase tracking-wider mb-2 inline-flex items-center gap-1.5"><Megaphone size={13} /> Civil Unrest Declarations</p>
               {Object.entries(game.currentDeclarations).map(([tid, decl]) => {
                 const t = game.teams.find(t => t.id === tid);
                 return (
@@ -410,8 +415,8 @@ export default function GMPage({ params }: { params: { gmToken: string } }) {
           {/* Pending bribe requests */}
           {pendingBribes.length > 0 && (
             <div className="card border-purple-500/30 bg-purple-950/20">
-              <p className="text-purple-400 text-xs font-bold uppercase tracking-wider mb-3">
-                🪙 Bribe Requests ({pendingBribes.length} pending)
+              <p className="text-purple-400 text-xs font-bold uppercase tracking-wider mb-3 inline-flex items-center gap-1.5">
+                <Coin size={13} /> Bribe Requests ({pendingBribes.length} pending)
               </p>
               {pendingBribes.map(bribe => {
                 const requestor = game.teams.find(t => t.id === bribe.teamId);
@@ -424,7 +429,7 @@ export default function GMPage({ params }: { params: { gmToken: string } }) {
                         <div className="flex items-center gap-2 mb-1">
                           <span className="w-2 h-2 rounded-full" style={{ backgroundColor: requestor?.color }} />
                           <span className="font-bold text-sm">{requestor?.name}</span>
-                          <span className="text-purple-400 text-xs">[{bribe.cost}🪙]</span>
+                          <span className="text-purple-400 text-xs inline-flex items-center gap-0.5">[{bribe.cost}<Coin size={10} />]</span>
                         </div>
                         <p className="text-white/70 text-sm">{menuItem?.label}</p>
                         {target && <p className="text-white/40 text-xs">→ targeting {target.name}</p>}
@@ -440,8 +445,8 @@ export default function GMPage({ params }: { params: { gmToken: string } }) {
                         })()}
                       </div>
                       <div className="flex gap-2 flex-shrink-0">
-                        <button className="btn-success text-xs px-3 py-1.5" onClick={() => respondBribe(bribe.id, true)}>✓ Approve</button>
-                        <button className="btn-danger text-xs px-3 py-1.5" onClick={() => respondBribe(bribe.id, false)}>✗ Reject</button>
+                        <button className="btn-success text-xs px-3 py-1.5 inline-flex items-center gap-1" onClick={() => respondBribe(bribe.id, true)}><Check size={12} /> Approve</button>
+                        <button className="btn-danger text-xs px-3 py-1.5 inline-flex items-center gap-1" onClick={() => respondBribe(bribe.id, false)}><XIcon size={12} /> Reject</button>
                       </div>
                     </div>
                   </div>
@@ -453,7 +458,7 @@ export default function GMPage({ params }: { params: { gmToken: string } }) {
           {/* Spy intel preview */}
           {Object.values(game.currentActions).some(a => a.type === 'spy') && game.currentWorldEvent !== 'fog_of_war' && (
             <div className="card border-blue-500/30 bg-blue-950/20">
-              <p className="text-blue-400 text-xs font-bold uppercase tracking-wider mb-2">🕵️ Spy Intel Preview</p>
+              <p className="text-blue-400 text-xs font-bold uppercase tracking-wider mb-2 inline-flex items-center gap-1.5"><Spyglass size={13} /> Spy Intel Preview</p>
               {Object.entries(game.currentActions)
                 .filter(([, a]) => a.type === 'spy')
                 .map(([spyId, a]) => {
@@ -491,13 +496,15 @@ export default function GMPage({ params }: { params: { gmToken: string } }) {
               </label>
             )}
             <button
-              className={`w-full py-3 rounded-xl font-bold text-base transition-all ${
-                allSubmitted ? 'bg-[#4F6EF5] hover:bg-[#3B5CE4] text-white' : 'bg-white/10 hover:bg-white/20 text-white/70'
+              className={`w-full py-3 rounded-xl font-bold text-base transition-all inline-flex items-center justify-center gap-2 ${
+                allSubmitted ? 'btn-primary' : 'bg-white/10 hover:bg-white/20 text-white/70'
               }`}
               onClick={resolveRound}
               disabled={resolving}
             >
-              {resolving ? '⚙️ Resolving...' : `⚡ Resolve Round ${game.currentRound}${!allSubmitted ? ` (${totalActive - submitted} missing)` : ''}`}
+              {resolving
+                ? <><Gear size={16} className="animate-spin" /> Resolving…</>
+                : <><Bolt size={16} /> Resolve Round {game.currentRound}{!allSubmitted ? ` (${totalActive - submitted} missing)` : ''}</>}
             </button>
           </div>
         </div>
@@ -516,7 +523,7 @@ export default function GMPage({ params }: { params: { gmToken: string } }) {
           {/* Gemini summary */}
           {lastRound.geminiSummary && (
             <div className="card border-[#F5A623]/30 bg-[#F5A623]/5">
-              <p className="text-[#F5A623] text-xs font-bold uppercase tracking-wider mb-2">✨ AI Dramatic Summary</p>
+              <p className="text-[#F5A623] text-xs font-bold uppercase tracking-wider mb-2 inline-flex items-center gap-1.5"><Sparkle size={13} /> AI Dramatic Summary</p>
               <p className="text-white/80 italic leading-relaxed text-sm">{lastRound.geminiSummary}</p>
             </div>
           )}
@@ -554,7 +561,7 @@ export default function GMPage({ params }: { params: { gmToken: string } }) {
           {/* Spy intel (full list for GM) */}
           {lastRound.spyResults.length > 0 && (
             <div className="card border-blue-500/30 bg-blue-950/20">
-              <p className="text-blue-400 text-xs font-bold uppercase tracking-wider mb-2">🕵️ Spy Results</p>
+              <p className="text-blue-400 text-xs font-bold uppercase tracking-wider mb-2 inline-flex items-center gap-1.5"><Spyglass size={13} /> Spy Results</p>
               {lastRound.spyResults.map((r, i) => {
                 const spy = game.teams.find(t => t.id === r.spyTeamId);
                 const target = game.teams.find(t => t.id === r.targetTeamId);
@@ -589,22 +596,22 @@ export default function GMPage({ params }: { params: { gmToken: string } }) {
 
           <div className="flex gap-3">
             {game.undoStack.length > 0 && (
-              <button className="btn-secondary flex-1" onClick={undoRound}>↩ Undo Round</button>
+              <button className="btn-secondary flex-1 inline-flex items-center justify-center gap-1.5" onClick={undoRound}><Undo size={14} /> Undo Round</button>
             )}
             {game.status === 'round_resolved' && (
               game.currentRound >= game.settings.maxRounds ? (
-                <button className="btn-primary flex-1 py-3" onClick={() => {
+                <button className="btn-primary flex-1 py-3 inline-flex items-center justify-center gap-2" onClick={() => {
                   fetch(`/api/game/${gameCode}/next-round`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ gmToken }),
                   }).then(fetchGame);
                 }}>
-                  🏆 End Game
+                  <Trophy size={16} /> End Game
                 </button>
               ) : (
-                <button className="btn-primary flex-1 py-3" onClick={startNextRound}>
-                  ▶ Start Round {game.currentRound + 1}
+                <button className="btn-primary flex-1 py-3 inline-flex items-center justify-center gap-2" onClick={startNextRound}>
+                  <Bolt size={16} /> Start Round {game.currentRound + 1}
                 </button>
               )
             )}
@@ -617,7 +624,7 @@ export default function GMPage({ params }: { params: { gmToken: string } }) {
       return (
         <div className="space-y-4">
           <div className="card text-center">
-            <div className="text-4xl mb-2">🏆</div>
+            <Trophy size={40} className="mx-auto mb-2 text-[#E8B863]" />
             <h3 className="font-black text-2xl">GAME OVER</h3>
             <p className="text-white/40 text-sm mt-1">The war has concluded after {game.roundHistory.length} rounds.</p>
           </div>
@@ -633,8 +640,8 @@ export default function GMPage({ params }: { params: { gmToken: string } }) {
               </div>
             ))}
           </div>
-          <p className="text-center text-[#F5A623] font-bold text-lg">
-            👑 {sorted[0]?.name} wins!
+          <p className="text-center text-[#E8B863] font-bold text-lg inline-flex items-center justify-center gap-2 w-full">
+            <Crown size={18} /> {sorted[0]?.name} wins!
           </p>
         </div>
       );
@@ -733,7 +740,7 @@ export default function GMPage({ params }: { params: { gmToken: string } }) {
       {/* Top row: logo / code / toggles */}
       <header className="grid grid-cols-1 lg:grid-cols-[1fr_auto_auto] gap-3 mb-4">
         <div className="card flex items-center gap-3 px-5 py-3">
-          <span className="font-serif italic text-2xl text-white leading-none">Faction Wars</span>
+          <span className="font-serif text-2xl text-white leading-none">Faction Wars</span>
           <span className="w-px h-5 bg-white/10" />
           <span className="text-white/45 text-[11px] uppercase tracking-[0.2em] font-medium">GM Console</span>
           <span className="ml-auto inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.18em] text-white/55">
@@ -749,7 +756,7 @@ export default function GMPage({ params }: { params: { gmToken: string } }) {
         >
           <span className="text-[10px] uppercase tracking-[0.2em] text-white/45 font-semibold">Code</span>
           <span className="font-mono font-bold text-base tracking-[0.3em] text-white">{gameCode}</span>
-          <span className="text-white/35 text-xs">{copied ? '✓' : '⎘'}</span>
+          <span className="text-white/40">{copied ? <Check size={14} /> : <Clipboard size={14} />}</span>
         </button>
 
         <div className="card flex items-center gap-2 px-3 py-3">
@@ -766,14 +773,14 @@ export default function GMPage({ params }: { params: { gmToken: string } }) {
           )}
           <button
             onClick={togglePoints}
-            className={`text-[11px] font-semibold px-3 py-1.5 rounded-lg border transition-colors ${
+            className={`text-[11px] font-semibold px-3 py-1.5 rounded-lg border transition-colors inline-flex items-center gap-1.5 ${
               game.pointsVisible
                 ? 'border-emerald-500/40 bg-emerald-950/40 text-emerald-300 hover:bg-emerald-950/60'
                 : 'border-white/10 bg-white/[0.03] text-white/65 hover:bg-white/[0.06]'
             }`}
             title="Toggle player visibility of TP / standings"
           >
-            {game.pointsVisible ? '👁 Points: Revealed' : '🙈 Points: Hidden'}
+            {game.pointsVisible ? <><Eye size={13} /> Points: Revealed</> : <><EyeOff size={13} /> Points: Hidden</>}
           </button>
         </div>
       </header>
@@ -785,14 +792,14 @@ export default function GMPage({ params }: { params: { gmToken: string } }) {
           <div className="flex items-baseline justify-between mb-4">
             <div>
               <p className="text-[10px] uppercase tracking-[0.22em] text-[#E04848] font-semibold mb-0.5">Standings</p>
-              <h2 className="font-serif italic text-2xl text-white">Scoreboard</h2>
+              <h2 className="font-serif text-2xl text-white">Scoreboard</h2>
             </div>
             <p className="text-white/30 text-[11px]">{game.teams.length} {game.teams.length === 1 ? 'team' : 'teams'}</p>
           </div>
           {game.teams.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center text-center px-6">
-              <div className="w-10 h-10 rounded-xl border border-white/10 bg-white/[0.02] flex items-center justify-center mb-3">
-                <span className="opacity-60">⏳</span>
+              <div className="w-10 h-10 rounded-xl border border-white/10 bg-white/[0.02] flex items-center justify-center mb-3 text-white/55">
+                <Hourglass size={18} />
               </div>
               <p className="text-white/55 text-sm font-medium">Waiting for teams</p>
               <p className="text-white/30 text-xs mt-1">Share the join link to get started.</p>
@@ -813,7 +820,7 @@ export default function GMPage({ params }: { params: { gmToken: string } }) {
             <div className="flex items-baseline justify-between mb-4">
               <div>
                 <p className="text-[10px] uppercase tracking-[0.22em] text-[#E04848] font-semibold mb-0.5">Game</p>
-                <h2 className="font-serif italic text-2xl text-white">Round</h2>
+                <h2 className="font-serif text-2xl text-white">Round</h2>
               </div>
             </div>
             <RoundPanel />
@@ -823,7 +830,7 @@ export default function GMPage({ params }: { params: { gmToken: string } }) {
             <div className="flex items-baseline justify-between mb-3">
               <div>
                 <p className="text-[10px] uppercase tracking-[0.22em] text-[#E04848] font-semibold mb-0.5">History</p>
-                <h2 className="font-serif italic text-xl text-white">Logs</h2>
+                <h2 className="font-serif text-xl text-white">Logs</h2>
               </div>
               <p className="text-white/30 text-[11px]">{game.roundHistory.length} {game.roundHistory.length === 1 ? 'round' : 'rounds'}</p>
             </div>

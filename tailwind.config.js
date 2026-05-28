@@ -8,6 +8,9 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        // Remap "white" to a warm bone color so existing text-white / bg-white/x utilities pick it up
+        white: '#EBDFC4',
+        bone: '#EBDFC4',
         navy: {
           900: '#0D0F1A',
           800: '#111420',

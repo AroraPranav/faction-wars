@@ -56,7 +56,7 @@ export default function Home() {
           <span className="text-[11px] uppercase tracking-[0.18em] text-white/55 font-medium">Live multiplayer</span>
         </div>
 
-        <h1 className="font-serif italic text-7xl md:text-[8.5rem] leading-[0.92] tracking-tight text-white">
+        <h1 className="font-serif text-7xl md:text-[8.5rem] leading-[0.92] tracking-tight text-white">
           Faction
           <span className="block bg-gradient-to-b from-white via-white to-white/40 bg-clip-text text-transparent">Wars</span>
         </h1>
@@ -84,7 +84,7 @@ export default function Home() {
         <div className="card w-full max-w-md space-y-5 p-6">
           <div>
             <p className="text-[11px] uppercase tracking-[0.18em] text-[#6B7FFF] font-semibold mb-1">Setup</p>
-            <h2 className="font-serif italic text-3xl text-white">New Game</h2>
+            <h2 className="font-serif text-3xl text-white">New Game</h2>
           </div>
 
           <div className="grid grid-cols-3 gap-3">
@@ -122,7 +122,7 @@ export default function Home() {
         <div className="card w-full max-w-sm space-y-5 p-6">
           <div>
             <p className="text-[11px] uppercase tracking-[0.18em] text-[#6B7FFF] font-semibold mb-1">Join</p>
-            <h2 className="font-serif italic text-3xl text-white">Enter your code</h2>
+            <h2 className="font-serif text-3xl text-white">Enter your code</h2>
             <p className="text-white/40 text-sm mt-1">Six characters, from your GM.</p>
           </div>
           <input
