@@ -222,23 +222,34 @@ export default function PlayPage({ params }: { params: { gameCode: string; teamT
         <div className="card w-full text-center">
           <div className="text-3xl mb-2">📣</div>
           <h2 className="font-bold text-lg">Round Complete!</h2>
-          <p className="text-white/40 text-sm mt-1">The Game Master is announcing results...</p>
+          <p className="text-white/40 text-sm mt-1">
+            {state.pointsVisible
+              ? 'The Game Master is announcing results...'
+              : 'The Game Master will narrate what happened. Points are hidden until they reveal.'}
+          </p>
         </div>
 
-        {/* My TP change */}
-        <div className="card w-full text-center">
-          <p className="text-white/50 text-xs uppercase tracking-wider mb-1">Your TP Change</p>
-          <div className={`text-3xl font-black ${myDelta > 0 ? 'text-green-400' : myDelta < 0 ? 'text-red-400' : 'text-white/40'}`}>
-            {myDelta > 0 ? '+' : ''}{myDelta}
+        {/* My TP change — only if GM has revealed points */}
+        {state.pointsVisible && (
+          <div className="card w-full text-center">
+            <p className="text-white/50 text-xs uppercase tracking-wider mb-1">Your TP Change</p>
+            <div className={`text-3xl font-black ${myDelta > 0 ? 'text-green-400' : myDelta < 0 ? 'text-red-400' : 'text-white/40'}`}>
+              {myDelta > 0 ? '+' : ''}{myDelta}
+            </div>
+            <div className="text-2xl font-bold text-white mt-1">{myTeam.tp} TP</div>
           </div>
-          <div className="text-2xl font-bold text-white mt-1">{myTeam.tp} TP</div>
-        </div>
+        )}
 
         {/* Spy Intel — only shown to the spy */}
         {state.spyIntel && (
           <div className="card w-full border-blue-500/50 bg-blue-950/30">
             <p className="text-blue-400 text-xs uppercase tracking-wider font-bold mb-2">🕵️ Spy Intel</p>
-            <p className="font-medium">
+            {state.spyIntelNarration && (
+              <p className="text-white/90 italic leading-relaxed text-sm mb-3 border-l-2 border-blue-400/40 pl-3">
+                {state.spyIntelNarration}
+              </p>
+            )}
+            <p className="font-medium text-sm">
               <span className="text-white/60">You spied on </span>
               <span className="font-bold text-white">
                 {state.teams.find(t => t.id === state.spyIntel!.targetTeamId)?.name}
@@ -279,23 +290,25 @@ export default function PlayPage({ params }: { params: { gameCode: string; teamT
           </div>
         )}
 
-        {/* Standings */}
-        <div className="card w-full">
-          <p className="text-white/50 text-xs uppercase tracking-wider mb-3">Current Standings</p>
-          {[...state.teams].sort((a, b) => b.tp - a.tp).map((t, i) => (
-            <div key={t.id} className="flex items-center gap-3 py-1.5">
-              <span className="text-white/40 text-sm w-4">{i + 1}</span>
-              <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: t.color }} />
-              <span className={`flex-1 text-sm font-medium ${t.eliminated ? 'line-through text-white/30' : ''}`}>{t.name}</span>
-              <span className="font-bold text-sm">{t.tp} TP</span>
-              {state.lastRoundDeltas?.[t.id] !== undefined && state.lastRoundDeltas[t.id] !== 0 && (
-                <span className={`text-xs font-bold ${state.lastRoundDeltas[t.id] > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                  {state.lastRoundDeltas[t.id] > 0 ? '+' : ''}{state.lastRoundDeltas[t.id]}
-                </span>
-              )}
-            </div>
-          ))}
-        </div>
+        {/* Standings — only if GM has revealed points */}
+        {state.pointsVisible && (
+          <div className="card w-full">
+            <p className="text-white/50 text-xs uppercase tracking-wider mb-3">Current Standings</p>
+            {[...state.teams].sort((a, b) => b.tp - a.tp).map((t, i) => (
+              <div key={t.id} className="flex items-center gap-3 py-1.5">
+                <span className="text-white/40 text-sm w-4">{i + 1}</span>
+                <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: t.color }} />
+                <span className={`flex-1 text-sm font-medium ${t.eliminated ? 'line-through text-white/30' : ''}`}>{t.name}</span>
+                <span className="font-bold text-sm">{t.tp} TP</span>
+                {state.lastRoundDeltas?.[t.id] !== undefined && state.lastRoundDeltas[t.id] !== 0 && (
+                  <span className={`text-xs font-bold ${state.lastRoundDeltas[t.id] > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    {state.lastRoundDeltas[t.id] > 0 ? '+' : ''}{state.lastRoundDeltas[t.id]}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
 
         <p className="text-white/30 text-xs text-center">Waiting for GM to start the next round...</p>
       </main>
@@ -316,7 +329,9 @@ export default function PlayPage({ params }: { params: { gameCode: string; teamT
           </div>
           <div className="flex gap-3 text-sm">
             <span className="text-white/50">Round <span className="font-bold text-white">{state.currentRound}</span></span>
-            <span className="text-white/50"><span className="font-bold text-[#F5A623]">{myTeam.tp}</span> TP</span>
+            {state.pointsVisible && (
+              <span className="text-white/50"><span className="font-bold text-[#F5A623]">{myTeam.tp}</span> TP</span>
+            )}
             <span className="text-white/50"><span className="font-bold text-purple-400">{myTeam.bribes}</span> 🪙</span>
           </div>
         </div>
@@ -467,7 +482,7 @@ export default function PlayPage({ params }: { params: { gameCode: string; teamT
                         })
                         .map(t => (
                           <option key={t.id} value={t.id}>
-                            {t.name} ({t.tp} TP)
+                            {t.name}{state.pointsVisible ? ` (${t.tp} TP)` : ''}
                             {myTeam.tradePartners.includes(t.id) ? ' [trade protected]' : ''}
                           </option>
                         ))}
@@ -486,7 +501,7 @@ export default function PlayPage({ params }: { params: { gameCode: string; teamT
                           {otherTeams
                             .filter(t => t.id !== target && !myTeam.tradePartners.includes(t.id))
                             .map(t => (
-                              <option key={t.id} value={t.id}>{t.name} ({t.tp} TP)</option>
+                              <option key={t.id} value={t.id}>{t.name}{state.pointsVisible ? ` (${t.tp} TP)` : ''}</option>
                             ))}
                         </select>
                       </div>
@@ -581,17 +596,19 @@ export default function PlayPage({ params }: { params: { gameCode: string; teamT
         <h2 className="font-bold text-lg">Preparing Next Round</h2>
         <p className="text-white/40 text-sm mt-1">The Game Master is setting up Round {state.currentRound + 1}...</p>
       </div>
-      <div className="card max-w-sm w-full">
-        <p className="text-white/50 text-xs uppercase tracking-wider mb-3">Standings</p>
-        {[...state.teams].sort((a, b) => b.tp - a.tp).map((t, i) => (
-          <div key={t.id} className="flex items-center gap-3 py-1.5">
-            <span className="text-white/30 text-sm w-4">{i + 1}</span>
-            <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: t.color }} />
-            <span className="flex-1 text-sm font-medium">{t.name}</span>
-            <span className="font-bold text-sm">{t.tp} TP</span>
-          </div>
-        ))}
-      </div>
+      {state.pointsVisible && (
+        <div className="card max-w-sm w-full">
+          <p className="text-white/50 text-xs uppercase tracking-wider mb-3">Standings</p>
+          {[...state.teams].sort((a, b) => b.tp - a.tp).map((t, i) => (
+            <div key={t.id} className="flex items-center gap-3 py-1.5">
+              <span className="text-white/30 text-sm w-4">{i + 1}</span>
+              <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: t.color }} />
+              <span className="flex-1 text-sm font-medium">{t.name}</span>
+              <span className="font-bold text-sm">{t.tp} TP</span>
+            </div>
+          ))}
+        </div>
+      )}
     </main>
   );
 }

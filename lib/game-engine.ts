@@ -38,10 +38,14 @@ export function resolveRound(game: Game): ResolutionResult {
     return false;
   };
 
+  // Teams whose Defend was nullified by an incoming Sabotage this round.
+  const sabotagedDefenders = new Set<string>();
+
   // Does this team's Defend action work?
   const defendsEffectively = (teamId: string): boolean => {
     if (currentWorldEvent === 'defenseless') return false; // Defenseless nullifies Defend
     if (isImmune(teamId)) return false; // Immune team doesn't need to defend
+    if (sabotagedDefenders.has(teamId)) return false; // Sabotage cancelled their Defend
     return getAction(teamId)?.type === 'defend';
   };
 
@@ -112,25 +116,15 @@ export function resolveRound(game: Game): ResolutionResult {
       continue;
     }
 
-    if (defendsEffectively(targetId)) {
-      // Sabotage blocked by Defend
-      log.push(`🛡️ ${name(team.id)} tried to Sabotage ${name(targetId)}, but they Defended.`);
-
-      if (currentWorldEvent === 'saboteurs_echo') {
-        tpDeltas[team.id] += 1;
-        tpDeltas[targetId] -= 1;
-        log.push(`🔊 [Saboteur's Echo] ${name(team.id)} still stole 1 TP from ${name(targetId)}.`);
-      }
-      continue;
-    }
-
-    // Sabotage lands
+    // Sabotage lands — Defend does NOT block Sabotage; instead Sabotage nullifies the Defend.
     const targetAction = getAction(targetId);
     if (targetAction && (targetAction.type === 'attack' || targetAction.type === 'trade')) {
       sabotageTargets.add(targetId);
       log.push(`💣 ${name(team.id)} Sabotaged ${name(targetId)}! Their ${targetAction.type.toUpperCase()} is cancelled.`);
+    } else if (targetAction && targetAction.type === 'defend') {
+      sabotagedDefenders.add(targetId);
+      log.push(`💣 ${name(team.id)} Sabotaged ${name(targetId)} — their Defend is nullified this round.`);
     } else {
-      // Sabotage on Defend or Spy — no special mechanical effect
       log.push(`💣 ${name(team.id)} Sabotaged ${name(targetId)} (no critical action to cancel).`);
     }
 

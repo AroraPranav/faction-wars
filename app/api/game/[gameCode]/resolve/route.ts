@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getGameByGmToken, saveGame } from '@/lib/kv';
 import { resolveRound, applyResolution } from '@/lib/game-engine';
-import { generateRoundSummary } from '@/lib/gemini';
+import { generateRoundSummary, generateSpyIntel } from '@/lib/gemini';
 
 export async function POST(req: NextRequest, { params }: { params: { gameCode: string } }) {
   const { gmToken, useGemini = false } = await req.json();
@@ -12,6 +12,31 @@ export async function POST(req: NextRequest, { params }: { params: { gameCode: s
   if (game.status !== 'round_active') return NextResponse.json({ error: 'Round is not active' }, { status: 400 });
 
   const result = resolveRound(game);
+
+  // Generate Hinglish spy intel narrations (best-effort)
+  if (useGemini && game.settings.geminiKey && result.spyResults.length > 0) {
+    await Promise.all(result.spyResults.map(async (sr) => {
+      try {
+        const spy = game.teams.find(t => t.id === sr.spyTeamId);
+        const target = game.teams.find(t => t.id === sr.targetTeamId);
+        if (!spy || !target) return;
+        const targetTargetName = sr.actionTarget
+          ? game.teams.find(t => t.id === sr.actionTarget)?.name ?? null
+          : null;
+        const targetIsAttackingSpy =
+          (sr.actionType === 'attack' || sr.actionType === 'sabotage') && sr.actionTarget === spy.id;
+        sr.narration = await generateSpyIntel(game.settings.geminiKey!, {
+          spyName: spy.name,
+          targetName: target.name,
+          targetAction: sr.actionType,
+          targetTargetName,
+          targetIsAttackingSpy,
+        });
+      } catch (e) {
+        console.error('Gemini spy intel error:', e);
+      }
+    }));
+  }
 
   let geminiSummary: string | undefined;
   if (useGemini && game.settings.geminiKey) {

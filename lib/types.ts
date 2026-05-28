@@ -47,6 +47,7 @@ export interface SpyResult {
   // For counterspy/counter_intel events
   counterspy?: boolean;   // spied-on team learns who spied
   counterIntel?: boolean; // spied-on team knows they were spied (but not who)
+  narration?: string;     // Gemini-generated Hinglish intel report (shown to the spy)
 }
 
 export interface ResolvedRound {
@@ -87,6 +88,8 @@ export interface Game {
   roundHistory: ResolvedRound[];
   // Undo stack (up to 5 snapshots before last resolutions)
   undoStack: string[]; // JSON-serialized Game snapshots
+  // When false, players cannot see TP / standings / deltas — GM reveals on demand
+  pointsVisible: boolean;
   createdAt: number;
 }
 
@@ -123,4 +126,6 @@ export interface TeamGameState {
   exposedActions?: Record<string, Action>; // Exposed Plans event
   counterspyInfo?: { spiedByTeamId: string; spiedByTeamName: string } | null;
   counterIntelInfo?: boolean;   // you were spied on (Counter Intel event)
+  pointsVisible: boolean;       // when false, hide all TP / standings / deltas from players
+  spyIntelNarration?: string;   // Hinglish narration for the spy
 }

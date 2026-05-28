@@ -23,7 +23,16 @@ export async function GET(req: NextRequest, { params }: { params: { gameCode: st
     if (!myTeam) return NextResponse.json({ error: 'Team not found' }, { status: 404 });
 
     const lastRound = game.roundHistory[game.roundHistory.length - 1];
-    const spyIntel = lastRound?.spyResults.find(r => r.spyTeamId === teamId);
+    const spyIntelRaw = lastRound?.spyResults.find(r => r.spyTeamId === teamId);
+    const spyIntel = spyIntelRaw ? {
+      spyTeamId: spyIntelRaw.spyTeamId,
+      targetTeamId: spyIntelRaw.targetTeamId,
+      actionType: spyIntelRaw.actionType,
+      actionTarget: spyIntelRaw.actionTarget,
+      counterspy: spyIntelRaw.counterspy,
+      counterIntel: spyIntelRaw.counterIntel,
+    } : undefined;
+    const spyIntelNarration = spyIntelRaw?.narration;
     const counterspyInfo = lastRound?.spyResults
       .filter(r => r.counterspy && r.targetTeamId === teamId)
       .map(r => ({ spiedByTeamId: r.spyTeamId, spiedByTeamName: game.teams.find(t => t.id === r.spyTeamId)?.name ?? r.spyTeamId }))[0] ?? null;
@@ -44,7 +53,7 @@ export async function GET(req: NextRequest, { params }: { params: { gameCode: st
         id: t.id,
         name: t.name,
         color: t.color,
-        tp: t.tp,
+        tp: game.pointsVisible ? t.tp : 0,
         bribes: t.bribes,
         eliminated: t.eliminated,
         isTradePartner: myTeam.tradePartners.includes(t.id),
@@ -53,7 +62,7 @@ export async function GET(req: NextRequest, { params }: { params: { gameCode: st
         id: myTeam.id,
         name: myTeam.name,
         color: myTeam.color,
-        tp: myTeam.tp,
+        tp: game.pointsVisible ? myTeam.tp : 0,
         bribes: myTeam.bribes,
         immune: myTeam.immune,
         tradePartners: myTeam.tradePartners,
@@ -62,11 +71,13 @@ export async function GET(req: NextRequest, { params }: { params: { gameCode: st
       declarations: game.currentDeclarations,
       hasSubmitted: !!game.currentActions[teamId],
       spyIntel: game.status === 'round_resolved' ? spyIntel : undefined,
+      spyIntelNarration: game.status === 'round_resolved' ? spyIntelNarration : undefined,
       lastRoundLog: game.status === 'round_resolved' ? lastRound?.log : undefined,
-      lastRoundDeltas: game.status === 'round_resolved' ? lastRound?.tpDeltas : undefined,
+      lastRoundDeltas: game.status === 'round_resolved' && game.pointsVisible ? lastRound?.tpDeltas : undefined,
       exposedActions,
       counterspyInfo: game.status === 'round_resolved' ? counterspyInfo : null,
       counterIntelInfo: game.status === 'round_resolved' ? counterIntelInfo : false,
+      pointsVisible: game.pointsVisible,
     };
 
     return NextResponse.json(response);

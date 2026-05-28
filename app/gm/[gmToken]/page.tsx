@@ -103,6 +103,16 @@ export default function GMPage({ params }: { params: { gmToken: string } }) {
     await fetchGame();
   }
 
+  async function togglePoints() {
+    if (!game) return;
+    await fetch(`/api/game/${gameCode}/reveal-points`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ gmToken, visible: !game.pointsVisible }),
+    });
+    await fetchGame();
+  }
+
   async function respondBribe(bribeId: string, approve: boolean) {
     await fetch(`/api/game/${gameCode}/bribe-respond`, {
       method: 'POST',
@@ -236,9 +246,47 @@ export default function GMPage({ params }: { params: { gmToken: string } }) {
             <p className="text-white/30 text-xs mt-2">Game Code: <span className="font-mono font-bold text-white/60 tracking-widest">{gameCode}</span></p>
           </div>
           {game.teams.length >= 2 && (
-            <button className="btn-primary w-full py-3" onClick={startRound} disabled={startingRound}>
-              {startingRound ? 'Starting...' : `⚔️ Start Game (${game.teams.length} teams ready)`}
-            </button>
+            <div className="card space-y-4">
+              <div>
+                <label className="label">World Event for Round 1</label>
+                <select className="input" value={selectedEvent} onChange={e => { setSelectedEvent(e.target.value); setShieldTarget(''); }}>
+                  {WORLD_EVENTS.map(e => (
+                    <option key={e.id} value={e.id}>{e.emoji} {e.name}</option>
+                  ))}
+                </select>
+                {selectedEvent !== 'none' && (
+                  <p className="text-white/40 text-xs mt-1">{WORLD_EVENTS.find(e => e.id === selectedEvent)?.description}</p>
+                )}
+              </div>
+
+              {selectedEvent === 'shield_dome' && (
+                <div>
+                  <label className="label">Shield Dome — Choose immune faction</label>
+                  <select className="input" value={shieldTarget} onChange={e => setShieldTarget(e.target.value)}>
+                    <option value="">— Select faction —</option>
+                    {activeTeams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                  </select>
+                </div>
+              )}
+
+              <button
+                className="w-full py-2 rounded-lg text-sm font-medium border border-white/10 text-white/60 hover:bg-white/5"
+                onClick={() => {
+                  const pool = WORLD_EVENTS.filter(e => e.id !== 'none');
+                  setSelectedEvent(pool[Math.floor(Math.random() * pool.length)].id);
+                }}
+              >
+                🎲 Randomize Event
+              </button>
+
+              <button
+                className="btn-primary w-full py-3"
+                onClick={startRound}
+                disabled={startingRound || (selectedEvent === 'shield_dome' && !shieldTarget)}
+              >
+                {startingRound ? 'Starting...' : `⚔️ Start Game (${game.teams.length} teams ready)`}
+              </button>
+            </div>
           )}
         </div>
       );
@@ -710,6 +758,17 @@ export default function GMPage({ params }: { params: { gmToken: string } }) {
               {pendingBribes.length} bribe{pendingBribes.length > 1 ? 's' : ''}
             </span>
           )}
+          <button
+            onClick={togglePoints}
+            className={`text-xs font-bold px-3 py-1 rounded-full border transition-colors ${
+              game.pointsVisible
+                ? 'border-green-500/50 bg-green-950/40 text-green-300 hover:bg-green-950/60'
+                : 'border-white/15 bg-white/5 text-white/60 hover:bg-white/10'
+            }`}
+            title="Toggle whether players can see TP / standings / deltas"
+          >
+            {game.pointsVisible ? '👁️ Points: Revealed' : '🙈 Points: Hidden'}
+          </button>
         </div>
       </header>
 

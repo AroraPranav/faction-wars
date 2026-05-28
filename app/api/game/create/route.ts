@@ -30,6 +30,7 @@ export async function POST(req: NextRequest) {
     currentDeclarations: {},
     roundHistory: [],
     undoStack: [],
+    pointsVisible: false,
     createdAt: Date.now(),
   };
 
