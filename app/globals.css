@@ -1,0 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+body {
+  background-color: #0D0F1A;
+  color: #e2e8f0;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+@layer components {
+  .card {
+    @apply bg-[#161928] border border-white/10 rounded-xl p-4;
+  }
+  .btn-primary {
+    @apply bg-[#4F6EF5] hover:bg-[#3B5CE4] text-white font-semibold px-5 py-2.5 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+  .btn-secondary {
+    @apply bg-white/10 hover:bg-white/20 text-white font-medium px-4 py-2 rounded-lg transition-colors;
+  }
+  .btn-danger {
+    @apply bg-red-600/80 hover:bg-red-600 text-white font-medium px-4 py-2 rounded-lg transition-colors;
+  }
+  .btn-success {
+    @apply bg-green-700/80 hover:bg-green-700 text-white font-medium px-4 py-2 rounded-lg transition-colors;
+  }
+  .input {
+    @apply bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-white/30 focus:outline-none focus:border-[#4F6EF5] transition-colors w-full;
+  }
+  .label {
+    @apply text-sm text-white/60 font-medium mb-1 block;
+  }
+  .badge {
+    @apply text-xs px-2 py-0.5 rounded-full font-medium;
+  }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #0D0F1A; }
+::-webkit-scrollbar-thumb { background: #2d3148; border-radius: 3px; }
