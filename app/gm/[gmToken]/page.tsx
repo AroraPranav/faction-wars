@@ -5,15 +5,12 @@ import { Game, Team, BribeRequest, ResolvedRound } from '@/lib/types';
 import { ACTION_META, BRIBE_MENU } from '@/lib/utils';
 import { WORLD_EVENTS, getEvent } from '@/lib/events';
 
-type Tab = 'scoreboard' | 'round' | 'log';
-
 export default function GMPage({ params }: { params: { gmToken: string } }) {
   const { gmToken } = params;
   const searchParams = useSearchParams();
   const gameCode = searchParams.get('code') ?? '';
 
   const [game, setGame] = useState<Game | null>(null);
-  const [tab, setTab] = useState<Tab>('scoreboard');
   const [error, setError] = useState('');
   const [resolving, setResolving] = useState(false);
   const [useGemini, setUseGemini] = useState(true);
@@ -46,12 +43,6 @@ export default function GMPage({ params }: { params: { gmToken: string } }) {
     const interval = setInterval(fetchGame, 3000);
     return () => clearInterval(interval);
   }, [fetchGame]);
-
-  // Auto-switch to round tab when game starts
-  useEffect(() => {
-    if (game?.status === 'round_active' || game?.status === 'round_setup') setTab('round');
-    if (game?.status === 'round_resolved') setTab('round');
-  }, [game?.status]);
 
   async function startRound() {
     if (!game) return;
@@ -181,7 +172,7 @@ export default function GMPage({ params }: { params: { gmToken: string } }) {
   const pendingBribes = game.currentBribes.filter(b => b.status === 'pending');
   const event = getEvent(game.currentWorldEvent);
 
-  // ── SCOREBOARD SIDEBAR ────────────────────────────────────────────────────────
+  // ── SCOREBOARD ────────────────────────────────────────────────────────────────
   const Scoreboard = () => (
     <div className="space-y-2">
       {sorted.map((team, i) => (
@@ -724,96 +715,120 @@ export default function GMPage({ params }: { params: { gmToken: string } }) {
     );
   };
 
+  const statusLabel =
+    game.status === 'lobby' ? 'Lobby' :
+    game.status === 'round_setup' ? 'Round setup' :
+    game.status === 'round_active' ? 'Round active' :
+    game.status === 'round_resolved' ? 'Round resolved' :
+    game.status === 'finished' ? 'Finished' : game.status;
+
+  const statusDot =
+    game.status === 'round_active' ? 'bg-emerald-400' :
+    game.status === 'round_resolved' ? 'bg-amber-400' :
+    game.status === 'finished' ? 'bg-purple-400' :
+    'bg-white/40';
+
   return (
-    <main className="min-h-screen flex flex-col">
-      {/* Top bar */}
-      <header className="border-b border-white/10 bg-[#111420] px-4 py-3 flex items-center justify-between sticky top-0 z-40">
-        <div className="flex items-center gap-3">
-          <span className="font-black text-sm tracking-widest text-[#4F6EF5]">FACTION WARS</span>
-          <span className="text-white/20">·</span>
-          <span className="text-white/50 text-sm">GM Console</span>
-          <span className="text-white/20">·</span>
-          <button className="font-mono font-bold text-sm tracking-widest text-white/70 hover:text-white transition-colors" onClick={copyJoinLink}>
-            {gameCode} {copied ? '✓' : '⎘'}
-          </button>
+    <main className="min-h-screen p-4 lg:p-6">
+      {/* Top row: logo / code / toggles */}
+      <header className="grid grid-cols-1 lg:grid-cols-[1fr_auto_auto] gap-3 mb-4">
+        <div className="card flex items-center gap-3 px-5 py-3">
+          <span className="font-serif italic text-2xl text-white leading-none">Faction Wars</span>
+          <span className="w-px h-5 bg-white/10" />
+          <span className="text-white/45 text-[11px] uppercase tracking-[0.2em] font-medium">GM Console</span>
+          <span className="ml-auto inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.18em] text-white/55">
+            <span className={`w-1.5 h-1.5 rounded-full ${statusDot} ${game.status === 'round_active' ? 'glow-pulse' : ''}`} />
+            {statusLabel}
+          </span>
         </div>
-        <div className="flex items-center gap-3 text-sm">
+
+        <button
+          onClick={copyJoinLink}
+          className="card flex items-center gap-3 px-5 py-3 text-left hover:border-white/20 transition-colors"
+          title="Copy join link"
+        >
+          <span className="text-[10px] uppercase tracking-[0.2em] text-white/45 font-semibold">Code</span>
+          <span className="font-mono font-bold text-base tracking-[0.3em] text-white">{gameCode}</span>
+          <span className="text-white/35 text-xs">{copied ? '✓' : '⎘'}</span>
+        </button>
+
+        <div className="card flex items-center gap-2 px-3 py-3">
           {game.status !== 'lobby' && (
-            <span className="text-white/50">
-              Round <span className="font-bold text-white">{game.currentRound}</span>
+            <span className="text-white/55 text-xs px-2">
+              R<span className="font-bold text-white ml-1">{game.currentRound}</span>
               <span className="text-white/30">/{game.settings.maxRounds}</span>
             </span>
           )}
-          <span className={`badge ${
-            game.status === 'lobby' ? 'bg-blue-900/50 text-blue-400' :
-            game.status === 'round_active' ? 'bg-green-900/50 text-green-400' :
-            game.status === 'round_resolved' ? 'bg-yellow-900/50 text-yellow-400' :
-            game.status === 'finished' ? 'bg-purple-900/50 text-purple-400' :
-            'bg-white/10 text-white/40'
-          }`}>
-            {game.status.replace('_', ' ')}
-          </span>
           {pendingBribes.length > 0 && (
-            <span className="bg-purple-500 text-white text-xs font-bold px-2 py-0.5 rounded-full animate-pulse">
+            <span className="bg-purple-500/90 text-white text-[11px] font-bold px-2 py-1 rounded-lg animate-pulse">
               {pendingBribes.length} bribe{pendingBribes.length > 1 ? 's' : ''}
             </span>
           )}
           <button
             onClick={togglePoints}
-            className={`text-xs font-bold px-3 py-1 rounded-full border transition-colors ${
+            className={`text-[11px] font-semibold px-3 py-1.5 rounded-lg border transition-colors ${
               game.pointsVisible
-                ? 'border-green-500/50 bg-green-950/40 text-green-300 hover:bg-green-950/60'
-                : 'border-white/15 bg-white/5 text-white/60 hover:bg-white/10'
+                ? 'border-emerald-500/40 bg-emerald-950/40 text-emerald-300 hover:bg-emerald-950/60'
+                : 'border-white/10 bg-white/[0.03] text-white/65 hover:bg-white/[0.06]'
             }`}
-            title="Toggle whether players can see TP / standings / deltas"
+            title="Toggle player visibility of TP / standings"
           >
-            {game.pointsVisible ? '👁️ Points: Revealed' : '🙈 Points: Hidden'}
+            {game.pointsVisible ? '👁 Points: Revealed' : '🙈 Points: Hidden'}
           </button>
         </div>
       </header>
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar — scoreboard */}
-        <aside className="w-72 border-r border-white/10 overflow-y-auto p-4 hidden lg:block">
-          <p className="text-white/30 text-xs uppercase tracking-wider mb-3">Scoreboard</p>
-          <p className="text-white/20 text-xs mb-3">Click a team to adjust TP / bribes</p>
-          <Scoreboard />
-        </aside>
-
-        {/* Main content */}
-        <div className="flex-1 overflow-y-auto">
-          {/* Tab bar */}
-          <div className="border-b border-white/10 px-4 flex gap-1 bg-[#111420] sticky top-0 z-30">
-            {([['scoreboard', '📊 Scoreboard'], ['round', '⚔️ Round'], ['log', '📜 Log']] as [Tab, string][]).map(([t, label]) => (
-              <button
-                key={t}
-                onClick={() => setTab(t)}
-                className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                  tab === t ? 'border-[#4F6EF5] text-white' : 'border-transparent text-white/40 hover:text-white/70'
-                }`}
-              >
-                {label}
-                {t === 'round' && pendingBribes.length > 0 && (
-                  <span className="ml-1.5 bg-purple-500 text-white text-xs px-1.5 py-0.5 rounded-full">{pendingBribes.length}</span>
-                )}
-              </button>
-            ))}
+      {/* Dashboard: scoreboard | (round / logs) */}
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(320px,420px)_1fr] gap-4">
+        {/* Left — Scoreboard */}
+        <section className="card p-5 flex flex-col min-h-[600px]">
+          <div className="flex items-baseline justify-between mb-4">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.22em] text-[#E04848] font-semibold mb-0.5">Standings</p>
+              <h2 className="font-serif italic text-2xl text-white">Scoreboard</h2>
+            </div>
+            <p className="text-white/30 text-[11px]">{game.teams.length} {game.teams.length === 1 ? 'team' : 'teams'}</p>
           </div>
+          {game.teams.length === 0 ? (
+            <div className="flex-1 flex flex-col items-center justify-center text-center px-6">
+              <div className="w-10 h-10 rounded-xl border border-white/10 bg-white/[0.02] flex items-center justify-center mb-3">
+                <span className="opacity-60">⏳</span>
+              </div>
+              <p className="text-white/55 text-sm font-medium">Waiting for teams</p>
+              <p className="text-white/30 text-xs mt-1">Share the join link to get started.</p>
+            </div>
+          ) : (
+            <>
+              <p className="text-white/25 text-[11px] mb-3">Click a team to adjust TP / bribes.</p>
+              <div className="flex-1 overflow-y-auto -mr-2 pr-2">
+                <Scoreboard />
+              </div>
+            </>
+          )}
+        </section>
 
-          <div className="p-4 max-w-2xl mx-auto">
-            {tab === 'scoreboard' && (
-              <>
-                <div className="lg:hidden mb-4">
-                  <Scoreboard />
-                </div>
-                <div className="hidden lg:block">
-                  <p className="text-white/30 text-sm text-center py-12">Scoreboard is in the left sidebar on desktop.</p>
-                </div>
-              </>
-            )}
-            {tab === 'round' && <RoundPanel />}
-            {tab === 'log' && <LogPanel />}
-          </div>
+        {/* Right — Round + Logs */}
+        <div className="grid grid-rows-[minmax(0,1.6fr)_minmax(0,1fr)] gap-4 min-h-[600px]">
+          <section className="card p-5 overflow-y-auto">
+            <div className="flex items-baseline justify-between mb-4">
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.22em] text-[#E04848] font-semibold mb-0.5">Game</p>
+                <h2 className="font-serif italic text-2xl text-white">Round</h2>
+              </div>
+            </div>
+            <RoundPanel />
+          </section>
+
+          <section className="card p-5 overflow-y-auto">
+            <div className="flex items-baseline justify-between mb-3">
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.22em] text-[#E04848] font-semibold mb-0.5">History</p>
+                <h2 className="font-serif italic text-xl text-white">Logs</h2>
+              </div>
+              <p className="text-white/30 text-[11px]">{game.roundHistory.length} {game.roundHistory.length === 1 ? 'round' : 'rounds'}</p>
+            </div>
+            <LogPanel />
+          </section>
         </div>
       </div>
 

@@ -8,13 +8,10 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Create game form
   const [maxRounds, setMaxRounds] = useState('12');
   const [startingTP, setStartingTP] = useState('10');
   const [startingBribes, setStartingBribes] = useState('5');
   const [geminiKey, setGeminiKey] = useState('');
-
-  // Join form
   const [gameCode, setGameCode] = useState('');
 
   async function handleCreate() {
@@ -43,68 +40,93 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center px-4 py-16">
-      {/* Header */}
-      <div className="text-center mb-12">
-        <div className="inline-block border-t-2 border-b-2 border-[#4F6EF5] py-3 px-8 mb-4">
-          <h1 className="text-6xl md:text-8xl font-black tracking-widest text-white">
-            FACTION<br />WARS
-          </h1>
+    <main className="relative min-h-screen flex flex-col items-center justify-center px-6 py-16 overflow-hidden">
+      {/* Ambient background */}
+      <div className="pointer-events-none absolute inset-0 -z-10">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1100px] h-[1100px] rounded-full blur-3xl opacity-[0.18] glow-pulse"
+             style={{ background: 'radial-gradient(closest-side, #4F6EF5, transparent 70%)' }} />
+        <div className="absolute inset-0 opacity-[0.03]"
+             style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)', backgroundSize: '64px 64px' }} />
+      </div>
+
+      {/* Hero */}
+      <div className="text-center mb-14 max-w-3xl">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/10 bg-white/[0.02] mb-8">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#6B7FFF] glow-pulse" />
+          <span className="text-[11px] uppercase tracking-[0.18em] text-white/55 font-medium">Live multiplayer</span>
         </div>
-        <p className="text-white/40 italic mt-3 text-sm tracking-wider">
+
+        <h1 className="font-serif italic text-7xl md:text-[8.5rem] leading-[0.92] tracking-tight text-white">
+          Faction
+          <span className="block bg-gradient-to-b from-white via-white to-white/40 bg-clip-text text-transparent">Wars</span>
+        </h1>
+
+        <p className="mt-8 text-white/50 text-base md:text-lg max-w-md mx-auto leading-relaxed">
           A game of diplomacy, deception, and calculated aggression.
         </p>
       </div>
 
       {view === 'home' && (
-        <div className="flex flex-col gap-4 w-full max-w-xs">
-          <button className="btn-primary text-lg py-4 rounded-xl" onClick={() => setView('create')}>
-            ⚔️ Create Game
+        <div className="flex flex-col gap-3 w-full max-w-sm">
+          <button className="btn-primary text-base py-3.5 rounded-2xl" onClick={() => setView('create')}>
+            Create a Game
           </button>
-          <button className="btn-secondary text-lg py-4 rounded-xl" onClick={() => setView('join')}>
-            🚩 Join a Game
+          <button className="btn-secondary text-base py-3.5 rounded-2xl" onClick={() => setView('join')}>
+            Join with a code
           </button>
+          <p className="text-center text-white/30 text-xs mt-4 tracking-wide">
+            No account. No download. Just share the link.
+          </p>
         </div>
       )}
 
       {view === 'create' && (
-        <div className="card w-full max-w-md space-y-4">
-          <h2 className="text-xl font-bold text-[#4F6EF5] mb-2">Game Setup</h2>
+        <div className="card w-full max-w-md space-y-5 p-6">
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.18em] text-[#6B7FFF] font-semibold mb-1">Setup</p>
+            <h2 className="font-serif italic text-3xl text-white">New Game</h2>
+          </div>
+
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="label">Rounds</label>
+              <input className="input" type="number" min={1} max={20} value={maxRounds} onChange={e => setMaxRounds(e.target.value)} />
+            </div>
+            <div>
+              <label className="label">Start TP</label>
+              <input className="input" type="number" min={1} max={50} value={startingTP} onChange={e => setStartingTP(e.target.value)} />
+            </div>
+            <div>
+              <label className="label">Bribes</label>
+              <input className="input" type="number" min={0} max={20} value={startingBribes} onChange={e => setStartingBribes(e.target.value)} />
+            </div>
+          </div>
 
           <div>
-            <label className="label">Max Rounds</label>
-            <input className="input" type="number" min={1} max={20} value={maxRounds} onChange={e => setMaxRounds(e.target.value)} />
-          </div>
-          <div>
-            <label className="label">Starting TP per team</label>
-            <input className="input" type="number" min={1} max={50} value={startingTP} onChange={e => setStartingTP(e.target.value)} />
-          </div>
-          <div>
-            <label className="label">Starting Bribe Tokens per team</label>
-            <input className="input" type="number" min={0} max={20} value={startingBribes} onChange={e => setStartingBribes(e.target.value)} />
-          </div>
-          <div>
-            <label className="label">Gemini API Key <span className="text-white/30">(optional — enables AI summaries)</span></label>
-            <input className="input" type="password" placeholder="AIza..." value={geminiKey} onChange={e => setGeminiKey(e.target.value)} />
+            <label className="label">Gemini API Key <span className="text-white/25 normal-case tracking-normal">— optional, enables AI summaries</span></label>
+            <input className="input" type="password" placeholder="AIza…" value={geminiKey} onChange={e => setGeminiKey(e.target.value)} />
           </div>
 
           {error && <p className="text-red-400 text-sm">{error}</p>}
 
-          <div className="flex gap-3 pt-2">
+          <div className="flex gap-3 pt-1">
             <button className="btn-secondary flex-1" onClick={() => setView('home')}>Back</button>
             <button className="btn-primary flex-1" onClick={handleCreate} disabled={loading}>
-              {loading ? 'Creating...' : 'Create Game →'}
+              {loading ? 'Creating…' : 'Create →'}
             </button>
           </div>
         </div>
       )}
 
       {view === 'join' && (
-        <div className="card w-full max-w-sm space-y-4">
-          <h2 className="text-xl font-bold text-[#4F6EF5]">Join a Game</h2>
-          <p className="text-white/50 text-sm">Enter the 6-character game code from your GM.</p>
+        <div className="card w-full max-w-sm space-y-5 p-6">
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.18em] text-[#6B7FFF] font-semibold mb-1">Join</p>
+            <h2 className="font-serif italic text-3xl text-white">Enter your code</h2>
+            <p className="text-white/40 text-sm mt-1">Six characters, from your GM.</p>
+          </div>
           <input
-            className="input text-2xl tracking-widest uppercase font-bold text-center"
+            className="input text-3xl tracking-[0.4em] uppercase font-bold text-center py-4"
             placeholder="WOLF42"
             maxLength={6}
             value={gameCode}
