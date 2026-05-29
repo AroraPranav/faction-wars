@@ -323,8 +323,13 @@ export function resolveRound(game: Game): ResolutionResult {
 export function applyResolution(game: Game, result: ResolutionResult, geminiSummary?: string): Game {
   const { tpDeltas, spyResults, log, eliminatedTeamIds, newTradePartners } = result;
 
-  // Snapshot current state for undo (before applying)
-  const snapshot = JSON.stringify(game);
+  // Snapshot current state for undo (before applying).
+  // Exclude undoStack itself — otherwise each snapshot embeds the previous 5
+  // snapshots (which embed theirs, etc.), causing exponential size growth that
+  // eventually blows past Upstash's 10MB request limit. undoRound rebuilds the
+  // restored undoStack anyway, so the omitted field is never needed.
+  const { undoStack: _priorUndo, ...gameWithoutUndo } = game;
+  const snapshot = JSON.stringify(gameWithoutUndo);
   const undoStack = [...(game.undoStack ?? []), snapshot].slice(-5);
 
   const tpBefore: Record<string, number> = {};
