@@ -42,6 +42,8 @@ export default function PlayPage({ params }: { params: { gameCode: string; teamT
           setTarget2('');
           setDeclaration(null);
           setSubmitError('');
+          setBribeSuccess('');
+          setBribeError('');
         }
         return data;
       });
@@ -210,7 +212,6 @@ export default function PlayPage({ params }: { params: { gameCode: string; teamT
 
   // ── ROUND RESOLVED ───────────────────────────────────────────────────────────
   if (state.status === 'round_resolved') {
-    const myDelta = state.lastRoundDeltas?.[myTeam.id] ?? 0;
     return (
       <main className="min-h-screen flex flex-col items-center px-4 py-8 gap-5 max-w-lg mx-auto">
         {/* Header */}
@@ -228,17 +229,6 @@ export default function PlayPage({ params }: { params: { gameCode: string; teamT
               : 'The Game Master will narrate what happened. Points are hidden until they reveal.'}
           </p>
         </div>
-
-        {/* My TP change — only if GM has revealed points */}
-        {state.pointsVisible && (
-          <div className="card w-full text-center">
-            <p className="text-white/50 text-xs uppercase tracking-wider mb-1">Your TP Change</p>
-            <div className={`text-3xl font-black ${myDelta > 0 ? 'text-green-400' : myDelta < 0 ? 'text-red-400' : 'text-white/40'}`}>
-              {myDelta > 0 ? '+' : ''}{myDelta}
-            </div>
-            <div className="text-2xl font-bold text-white mt-1">{myTeam.tp} TP</div>
-          </div>
-        )}
 
         {/* Spy Intel — only shown to the spy */}
         {state.spyIntel && (
@@ -300,11 +290,6 @@ export default function PlayPage({ params }: { params: { gameCode: string; teamT
                 <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: t.color }} />
                 <span className={`flex-1 text-sm font-medium ${t.eliminated ? 'line-through text-white/30' : ''}`}>{t.name}</span>
                 <span className="font-bold text-sm">{t.tp} TP</span>
-                {state.lastRoundDeltas?.[t.id] !== undefined && state.lastRoundDeltas[t.id] !== 0 && (
-                  <span className={`text-xs font-bold ${state.lastRoundDeltas[t.id] > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                    {state.lastRoundDeltas[t.id] > 0 ? '+' : ''}{state.lastRoundDeltas[t.id]}
-                  </span>
-                )}
               </div>
             ))}
           </div>
@@ -441,12 +426,26 @@ export default function PlayPage({ params }: { params: { gameCode: string; teamT
               <>
                 <p className="text-white/50 text-xs uppercase tracking-wider mt-1">Choose your action</p>
                 <div className="grid grid-cols-1 gap-2">
-                  {(Object.entries(ACTION_META) as [ActionType, typeof ACTION_META[keyof typeof ACTION_META]][]).map(([action, meta]) => (
+                  {(Object.entries(ACTION_META) as [ActionType, typeof ACTION_META[keyof typeof ACTION_META]][]).map(([action, meta]) => {
+                    // Civil Unrest: a public declaration restricts which actions are allowed.
+                    const allowedByDeclaration: Record<Declaration, ActionType[]> = {
+                      offensive: ['attack', 'sabotage'],
+                      defensive: ['defend', 'reinforce'],
+                      neutral: ['spy', 'trade'],
+                    };
+                    const disabled =
+                      state.worldEvent === 'civil_unrest' && !!myDeclared
+                        ? !allowedByDeclaration[myDeclared].includes(action)
+                        : false;
+                    return (
                     <button
                       key={action}
+                      disabled={disabled}
                       onClick={() => { setSelectedAction(action); setTarget(''); setTarget2(''); }}
                       className={`text-left p-4 rounded-xl border transition-all ${
-                        selectedAction === action
+                        disabled
+                          ? 'border-white/5 bg-white/5 opacity-40 cursor-not-allowed'
+                          : selectedAction === action
                           ? `${meta.border} ${meta.bg}`
                           : 'border-white/10 bg-white/5 hover:bg-white/10'
                       }`}
@@ -459,7 +458,8 @@ export default function PlayPage({ params }: { params: { gameCode: string; teamT
                       </div>
                       <p className="text-white/40 text-xs mt-1">{meta.desc}</p>
                     </button>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {/* Target selector */}

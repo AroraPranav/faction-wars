@@ -15,7 +15,7 @@ export async function POST(req: NextRequest, { params }: { params: { gameCode: s
   if (myTeam.eliminated) return NextResponse.json({ error: 'Your faction is eliminated' }, { status: 400 });
   if (game.status !== 'round_active') return NextResponse.json({ error: 'Round is not active' }, { status: 400 });
 
-  const validActions: ActionType[] = ['attack', 'defend', 'spy', 'sabotage', 'trade'];
+  const validActions: ActionType[] = ['attack', 'defend', 'spy', 'sabotage', 'trade', 'reinforce'];
   if (!validActions.includes(action)) return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
 
   // Actions that need a target

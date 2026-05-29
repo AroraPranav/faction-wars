@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
       maxRounds: Number(maxRounds),
       startingTP: Number(startingTP),
       startingBribes: Number(startingBribes),
-      maxTeams: 6,
+      maxTeams: 8,
       geminiKey: geminiKey || undefined,
     },
     currentRound: 0,

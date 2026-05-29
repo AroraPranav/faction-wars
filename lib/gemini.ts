@@ -1,7 +1,7 @@
 import { ResolvedRound, Team, ActionType } from './types';
 import { getEvent } from './events';
 
-const GEMINI_MODEL = 'gemini-flash-latest';
+const GEMINI_MODEL = 'gemini-3.1-flash-lite';
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
 async function callGemini(apiKey: string, prompt: string, temperature = 0.85): Promise<string> {

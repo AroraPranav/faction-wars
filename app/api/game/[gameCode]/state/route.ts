@@ -38,9 +38,12 @@ export async function GET(req: NextRequest, { params }: { params: { gameCode: st
       .map(r => ({ spiedByTeamId: r.spyTeamId, spiedByTeamName: game.teams.find(t => t.id === r.spyTeamId)?.name ?? r.spyTeamId }))[0] ?? null;
     const counterIntelInfo = lastRound?.spyResults.some(r => r.counterIntel && r.targetTeamId === teamId) ?? false;
 
-    // Exposed Plans: show all actions
+    // Exposed Plans: show all actions — but only after this team has submitted their own,
+    // so they cannot peek at others' plans before committing.
     const exposedActions =
-      game.currentWorldEvent === 'exposed_plans' && game.status === 'round_active'
+      game.currentWorldEvent === 'exposed_plans' &&
+      game.status === 'round_active' &&
+      !!game.currentActions[teamId]
         ? game.currentActions
         : undefined;
 

@@ -15,6 +15,8 @@ export const TEAM_COLORS = [
   '#F59E0B', // amber
   '#8B5CF6', // violet
   '#EC4899', // pink
+  '#14B8A6', // teal
+  '#F97316', // orange
 ];
 
 export function getTeamColor(index: number): string {
@@ -22,11 +24,12 @@ export function getTeamColor(index: number): string {
 }
 
 export const ACTION_META: Record<string, { label: string; color: string; border: string; bg: string; desc: string; needsTarget: boolean }> = {
-  attack:   { label: 'ATTACK',   color: 'text-red-400',    border: 'border-red-500',    bg: 'bg-red-950/40',    desc: 'Steal 2 TP from a target faction.',              needsTarget: true  },
-  defend:   { label: 'DEFEND',   color: 'text-green-400',  border: 'border-green-500',  bg: 'bg-green-950/40',  desc: 'Protect yourself from attacks and sabotage.',     needsTarget: false },
-  spy:      { label: 'SPY',      color: 'text-blue-400',   border: 'border-blue-500',   bg: 'bg-blue-950/40',   desc: 'Learn what action a target faction submitted.',   needsTarget: true  },
-  sabotage: { label: 'SABOTAGE', color: 'text-yellow-400', border: 'border-yellow-500', bg: 'bg-yellow-950/40', desc: "Disrupt a target faction's action, cancelling it.", needsTarget: true  },
-  trade:    { label: 'TRADE',    color: 'text-purple-400', border: 'border-purple-500', bg: 'bg-purple-950/40', desc: 'Cooperate — both factions gain +1 TP (must be mutual).', needsTarget: true  },
+  attack:    { label: 'ATTACK',    color: 'text-red-400',    border: 'border-red-500',    bg: 'bg-red-950/40',    desc: 'Steal 2 TP from a target faction.',              needsTarget: true  },
+  defend:    { label: 'DEFEND',    color: 'text-green-400',  border: 'border-green-500',  bg: 'bg-green-950/40',  desc: 'Protect yourself from all attacks.',     needsTarget: false },
+  spy:       { label: 'SPY',       color: 'text-blue-400',   border: 'border-blue-500',   bg: 'bg-blue-950/40',   desc: 'Learn what action a target faction submitted.',   needsTarget: true  },
+  sabotage:  { label: 'SABOTAGE',  color: 'text-yellow-400', border: 'border-yellow-500', bg: 'bg-yellow-950/40', desc: "Disrupt a target faction's action, cancelling it.", needsTarget: true  },
+  trade:     { label: 'TRADE',     color: 'text-purple-400', border: 'border-purple-500', bg: 'bg-purple-950/40', desc: 'Cooperate — both factions gain +1 TP (must be mutual).', needsTarget: true  },
+  reinforce: { label: 'REINFORCE', color: 'text-cyan-400',   border: 'border-cyan-500',   bg: 'bg-cyan-950/40',   desc: 'Brace against Sabotage — blocks it (but not Attacks).', needsTarget: false },
 };
 
 export const BRIBE_MENU = [

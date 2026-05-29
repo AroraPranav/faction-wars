@@ -14,7 +14,7 @@ export async function POST(req: NextRequest, { params }: { params: { gameCode: s
   if (!game) return NextResponse.json({ error: 'Game not found' }, { status: 404 });
   if (game.status !== 'lobby') return NextResponse.json({ error: 'Game has already started' }, { status: 400 });
   if (game.teams.length >= game.settings.maxTeams) {
-    return NextResponse.json({ error: 'Game is full (max 6 teams)' }, { status: 400 });
+    return NextResponse.json({ error: `Game is full (max ${game.settings.maxTeams} teams)` }, { status: 400 });
   }
 
   const trimmedName = name.trim();

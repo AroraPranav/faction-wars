@@ -41,6 +41,17 @@ export function resolveRound(game: Game): ResolutionResult {
   // Teams whose Defend was nullified by an incoming Sabotage this round.
   const sabotagedDefenders = new Set<string>();
 
+  // Reinforcers whose Reinforce was exposed (and nullified) by a Spy this round.
+  const spiedReinforcers = new Set<string>();
+
+  // Does this team's Reinforce action still hold? Reinforce blocks Sabotage,
+  // but is nullified by Defenseless or by being exposed via Spy.
+  const reinforceEffective = (teamId: string): boolean => {
+    if (currentWorldEvent === 'defenseless') return false; // Defenseless overrides — sabotage lands
+    if (spiedReinforcers.has(teamId)) return false;         // Spy exposed the Reinforce, it fails
+    return getAction(teamId)?.type === 'reinforce';
+  };
+
   // Does this team's Defend action work?
   const defendsEffectively = (teamId: string): boolean => {
     if (currentWorldEvent === 'defenseless') return false; // Defenseless nullifies Defend
@@ -85,6 +96,12 @@ export function resolveRound(game: Game): ResolutionResult {
       spyResults.push(result);
       log.push(`🕵️ ${name(team.id)} spied on ${name(action.target)} — intel gathered.`);
 
+      // Spy exposes Reinforce → the Reinforce fails this round.
+      if (targetAction.type === 'reinforce') {
+        spiedReinforcers.add(action.target);
+        log.push(`🔭 ${name(action.target)}'s Reinforce was exposed by the spy — it fails this round.`);
+      }
+
       if (currentWorldEvent === 'counter_intel') {
         log.push(`🕵️ [Counter Intel] ${name(action.target)} was notified they were spied on (identity hidden).`);
       }
@@ -113,6 +130,17 @@ export function resolveRound(game: Game): ResolutionResult {
 
     if (hasBribeSabotageBlock(targetId)) {
       log.push(`💥 ${name(team.id)} tried to Sabotage ${name(targetId)}, but their bribe blocked it.`);
+      continue;
+    }
+
+    // Reinforce blocks Sabotage. Under Saboteur's Echo the saboteur still steals 1 TP as consolation.
+    if (reinforceEffective(targetId)) {
+      log.push(`🛡️ ${name(team.id)} tried to Sabotage ${name(targetId)}, but their Reinforce held — Sabotage fails.`);
+      if (currentWorldEvent === 'saboteurs_echo') {
+        tpDeltas[team.id] += 1;
+        tpDeltas[targetId] -= 1;
+        log.push(`🔊 [Saboteur's Echo] ${name(team.id)} stole 1 TP from ${name(targetId)} as consolation.`);
+      }
       continue;
     }
 
