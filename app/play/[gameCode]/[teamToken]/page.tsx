@@ -458,8 +458,8 @@ export default function PlayPage({ params }: { params: { gameCode: string; teamT
               <div className="text-3xl mb-2">✅</div>
               <p className="font-bold text-green-400">Action submitted!</p>
               <p className="text-white/40 text-sm mt-1">
-                {locked && canSwitch
-                  ? 'Round is locked. You may still switch your action for 2 tokens below.'
+                {canSwitch
+                  ? 'Chaos Market: you can switch your action for 2 tokens via the Bribe Menu below.'
                   : 'Waiting for the Game Master to resolve the round...'}
               </p>
             </div>
@@ -597,9 +597,8 @@ export default function PlayPage({ params }: { params: { gameCode: string; teamT
               <select className="input text-sm" value={selectedBribe} onChange={e => { setSelectedBribe(e.target.value); setBribeTarget(''); setBribeNewAction(''); setBribeNewTarget(''); }}>
                 <option value="">— Choose a power —</option>
                 {BRIBE_MENU
-                  // The 2-token "switch your action" bribe is only offered during the Chaos
-                  // Market switch window (after the GM locks the round).
-                  .filter(b => b.power !== 'switch_action' || (canSwitch && locked))
+                  // The 2-token "switch your action" bribe is only offered during Chaos Market.
+                  .filter(b => b.power !== 'switch_action' || canSwitch)
                   .map(b => (
                     <option key={b.power} value={b.power} disabled={myTeam.bribes < b.cost}>
                       [{b.cost}🪙] {b.label}

@@ -25,15 +25,10 @@ export async function POST(req: NextRequest, { params }: { params: { gameCode: s
   if (!menuItem) return NextResponse.json({ error: 'Invalid bribe power' }, { status: 400 });
 
   // Chaos Market: the "switch your action" bribe is only available when Chaos Market is the
-  // active event, and only after the GM has locked the round (the switch window — before that
-  // a team can simply re-submit a new action for free).
-  if (power === 'switch_action') {
-    if (game.currentWorldEvent !== 'chaos_market') {
-      return NextResponse.json({ error: 'Switching actions is only allowed during the Chaos Market event' }, { status: 400 });
-    }
-    if (game.status !== 'round_locked') {
-      return NextResponse.json({ error: 'You can switch only after the GM locks the round' }, { status: 400 });
-    }
+  // active event. It works in both the active round and the locked switch window — once a team
+  // has submitted, switching is the only way to change their action.
+  if (power === 'switch_action' && game.currentWorldEvent !== 'chaos_market') {
+    return NextResponse.json({ error: 'Switching actions is only allowed during the Chaos Market event' }, { status: 400 });
   }
 
   if (myTeam.bribes < menuItem.cost) {

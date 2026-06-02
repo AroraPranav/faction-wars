@@ -539,7 +539,8 @@ export default function GMPage({ params }: { params: { gmToken: string } }) {
           {!locked ? (
             <div className="space-y-2">
               <p className="text-white/40 text-xs">
-                Lock actions to open the {game.currentWorldEvent === 'chaos_market' ? 'Chaos Market switch window' : 'final review'}. No new submissions are accepted once locked.
+                Lock actions for a final review before resolving. No new submissions are accepted once locked
+                {game.currentWorldEvent === 'chaos_market' ? ' (teams can still pay 2 tokens to switch)' : ''}.
               </p>
               <button
                 className={`w-full py-3 rounded-xl font-bold text-base transition-all inline-flex items-center justify-center gap-2 ${
