@@ -1,18 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getGameByTeamToken, saveGame } from '@/lib/kv';
-import { BribePower, BribeRequest } from '@/lib/types';
-import { BRIBE_MENU } from '@/lib/utils';
+import { ActionType, BribePower, BribeRequest } from '@/lib/types';
+import { ACTION_META, BRIBE_MENU } from '@/lib/utils';
 import { generateToken } from '@/lib/utils';
 
 export async function POST(req: NextRequest, { params }: { params: { gameCode: string } }) {
-  const { teamToken, power, targetTeamId, newAction } = await req.json();
+  const { teamToken, power, targetTeamId, newAction, newTarget } = await req.json();
   const gameCode = params.gameCode.toUpperCase();
 
   const result = await getGameByTeamToken(teamToken);
   if (!result || result.game.id !== gameCode) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { game, teamId } = result;
 
-  if (game.status !== 'round_active') return NextResponse.json({ error: 'Bribes only allowed during active round' }, { status: 400 });
+  // Bribes are allowed during the active round and during the locked switch window.
+  if (game.status !== 'round_active' && game.status !== 'round_locked') {
+    return NextResponse.json({ error: 'Bribes only allowed during an active or locked round' }, { status: 400 });
+  }
 
   const myTeam = game.teams.find(t => t.id === teamId);
   if (!myTeam) return NextResponse.json({ error: 'Team not found' }, { status: 404 });
@@ -21,9 +24,16 @@ export async function POST(req: NextRequest, { params }: { params: { gameCode: s
   const menuItem = BRIBE_MENU.find(b => b.power === power);
   if (!menuItem) return NextResponse.json({ error: 'Invalid bribe power' }, { status: 400 });
 
-  // Chaos Market: switch_action only available if event is active
-  if (power === 'switch_action' && game.currentWorldEvent !== 'chaos_market' && game.currentWorldEvent !== null) {
-    // switch_action bribe is always on the menu regardless of event
+  // Chaos Market: the "switch your action" bribe is only available when Chaos Market is the
+  // active event, and only after the GM has locked the round (the switch window — before that
+  // a team can simply re-submit a new action for free).
+  if (power === 'switch_action') {
+    if (game.currentWorldEvent !== 'chaos_market') {
+      return NextResponse.json({ error: 'Switching actions is only allowed during the Chaos Market event' }, { status: 400 });
+    }
+    if (game.status !== 'round_locked') {
+      return NextResponse.json({ error: 'You can switch only after the GM locks the round' }, { status: 400 });
+    }
   }
 
   if (myTeam.bribes < menuItem.cost) {
@@ -36,12 +46,29 @@ export async function POST(req: NextRequest, { params }: { params: { gameCode: s
     return NextResponse.json({ error: 'Target team required for this bribe' }, { status: 400 });
   }
 
+  // Validate switch_action payload — must name a new action, and a new target if that action needs one.
+  if (power === 'switch_action') {
+    if (!game.currentActions[teamId]) {
+      return NextResponse.json({ error: 'You must submit an action before switching it' }, { status: 400 });
+    }
+    if (!newAction || !ACTION_META[newAction]) {
+      return NextResponse.json({ error: 'Choose a valid action to switch to' }, { status: 400 });
+    }
+    if (ACTION_META[newAction].needsTarget && !newTarget) {
+      return NextResponse.json({ error: 'The action you are switching to requires a target' }, { status: 400 });
+    }
+    if (newTarget && newTarget === teamId) {
+      return NextResponse.json({ error: 'Cannot target yourself' }, { status: 400 });
+    }
+  }
+
   const bribeRequest: BribeRequest = {
     id: generateToken(12),
     teamId,
     power: power as BribePower,
     targetTeamId,
-    newAction,
+    newAction: power === 'switch_action' ? (newAction as ActionType) : undefined,
+    newTarget: power === 'switch_action' && newTarget ? newTarget : undefined,
     cost: menuItem.cost,
     status: 'pending',
     createdAt: Date.now(),

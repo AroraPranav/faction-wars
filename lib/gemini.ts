@@ -1,5 +1,6 @@
 import { ResolvedRound, Team, ActionType } from './types';
 import { getEvent } from './events';
+import { TOKEN_LEDGER_PREFIX } from './game-engine';
 
 const GEMINI_MODEL = 'gemini-3.1-flash-lite';
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
@@ -39,7 +40,11 @@ export async function generateRoundSummary(
     ? `World event in effect: ${eventDef.name}`
     : 'No world event this round.';
 
-  const lines = round.log.map(l => '- ' + l.replace(/\*\*/g, '')).join('\n');
+  // Drop GM-only token-ledger lines so the narration never leaks who bribed for what.
+  const lines = round.log
+    .filter(l => !l.startsWith(TOKEN_LEDGER_PREFIX))
+    .map(l => '- ' + l.replace(/\*\*/g, ''))
+    .join('\n');
 
   const deltas = Object.entries(round.tpDeltas)
     .filter(([, d]) => d !== 0)
@@ -64,29 +69,28 @@ Current standings: ${standings}
 
 ═══ CRITICAL STYLE RULES ═══
 
-**PARTIAL REVEAL — this is the most important rule.** This game's strategy depends on bluffing and deduction. DO NOT freely reveal WHO attacked, sabotaged, or spied on whom. Reveal **outcomes**, not **intentions**. Hide attacker / saboteur / spy identities behind phrases like:
-  • "kisi ne", "anjaan haathon se", "ek ghaat lagayi gayi", "raat ke andhere mein"
-  • "ek saazish kaamyab hui", "kisi ki yojana tut gayi"
-  • "khabar leak hui — par leak kisne ki, ye raaz hi rahega"
+**TOTAL ANONYMITY — this is the single most important rule.** This game lives or dies on bluffing and deduction. The narration is a riddle, NOT a report. When a player reads it, they must NOT be able to tell whether a described event happened to THEM, to a rival, or to nobody in particular. Keep EVERY team guessing.
 
-**When to name a team:**
-- ✅ The VICTIM of an attack (they obviously know they got hit): "Team Alpha pe vaar hua"
-- ✅ A SUCCESSFUL Trade between two teams (both consented openly — UNLESS the event is Silent Trade)
-- ✅ ELIMINATED teams (it's public)
-- ❌ The ATTACKER (don't say "Echo attacked Alpha" — say "kisi ne Alpha pe vaar kiya")
-- ❌ The SABOTEUR (don't reveal who sabotaged whom)
-- ❌ The SPY and their target (just hint that "saaye mein koi nazar rakh raha tha")
-- ❌ A FAILED trade attempt's parties (hide the names — say "ek deal table par aayi par hath nahi mila")
+**NAME NO ONE — neither attacker, victim, saboteur, spy, nor target.** Do not name a team for any attack, sabotage, spy, failed trade, defend, or reinforce. Refer to all parties only through anonymous, atmospheric phrasing so that even the team it happened to is left wondering "wait… was that me?":
+  • actors: "kisi ne", "anjaan haathon se", "ek chhupa hua khiladi", "parde ke peeche se"
+  • events: "ek vaar hua", "ek ghaat lagayi gayi", "ek saazish kaamyab hui", "kisi ki dhal kaam aayi", "ek yojana tut gayi", "saaye mein koi nazar rakh raha tha"
+  • Speak in counts and rumors, never identities: "do vaar hue, dono ka anjaam alag", "kahin khabar leak hui — par kiski, kisne, ye raaz hai".
+
+**The ONLY exceptions where a team may be named:**
+- ✅ A SUCCESSFUL Trade between two teams (both consented openly — UNLESS the event is Silent Trade, then stay anonymous).
+- ✅ ELIMINATED teams (it's public).
+Everything else stays nameless — including who got attacked. Describe the BLOW landing in the dark, never whose door it knocked on.
 
 **Other rules:**
 1. Mix Hindi (Roman script) and English naturally — don't lean too heavy on either. Bollywood vocabulary welcome: "jang", "vaar", "dhokha", "sazish", "ghaat", "chaal", "talwar", "khoon", "raaz", "andhera", "saaya", "ant".
-2. **DO NOT list TP changes mechanically.** Weave outcomes into the story.
-3. End with one short hook sentence about the leader's position OR the gathering chaos — without naming exact TP values.
-4. Plain flowing prose. No bullet points, no markdown, no asterisks. Under 140 words.
-5. 4-6 sentences total.
+2. **DO NOT list TP changes mechanically.** Weave outcomes into the story as rumor and consequence, never as a scoreboard.
+3. Keep numbers vague — "kuch teams kamzor padi", not "Alpha lost 2".
+4. End with one short hook sentence about the gathering suspicion or chaos — without naming who leads or exact TP values.
+5. Plain flowing prose. No bullet points, no markdown, no asterisks. Under 140 words.
+6. 4-6 sentences total.
 
-Inspiration tone (style only — do NOT copy):
-"Round ${round.roundNumber} ka pardafash hua. Maidan-e-jung mein Team Alpha pe ek anjaan vaar hua — par unki dhal mazboot nikli, vaar bekaar gaya. Udhar ek mez ke neeche se ghaat lagayi gayi, jiska shikar bhi maloom nahi pad raha. Saaye mein koi nazar rakh raha tha, par kis pe — ye raaz abhi sirf usi ke paas hai. Aaj koi gira nahi, par har team ek-doosre ko shakk ki nigah se dekh rahi hai. Chaal-baazi ki asli jung ab shuru hone wali hai."`;
+Inspiration tone (style only — do NOT copy, and note how NO team is named):
+"Round ${round.roundNumber} ki raat khaamosh nahi rahi. Andhere mein ek vaar chala — kis par, ye sirf shikaar aur shikari jaante hain. Ek mez ke neeche se ghaat lagayi gayi, par jiska nuksaan hua woh bhi shayad samajh na paaye ki ye kiska kaam tha. Kahin ek dhal mazboot nikli, kahin ek yojana bikhar gayi. Saaye mein nazar rakhi gayi — par kis pe, ye raaz parde ke peeche hi dafan hai. Aaj har koi apne padosi ko shakk ki nigah se dekh raha hai."`;
 
   return callGemini(apiKey, prompt, 0.9);
 }

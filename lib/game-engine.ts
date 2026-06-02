@@ -1,4 +1,9 @@
 import { Game, Team, Action, ActionType, SpyResult, ResolvedRound } from './types';
+import { BRIBE_MENU } from './utils';
+
+// Prefix marking GM token-ledger log lines. These are GM-facing bookkeeping and
+// are filtered out of the AI narration (see lib/gemini.ts) so they don't leak bribers.
+export const TOKEN_LEDGER_PREFIX = '💰';
 
 interface ResolutionResult {
   tpDeltas: Record<string, number>;
@@ -71,7 +76,8 @@ export function resolveRound(game: Game): ResolutionResult {
     for (const team of activeTeams) {
       const action = getAction(team.id);
       if (!action || action.type !== 'spy' || !action.target) continue;
-      if (isImmune(team.id)) continue; // immune team's own actions still fire unless they're the spy... actually, immune just means they can't be targeted. Let them spy.
+      // Immunity only protects against being TARGETED — it must not disable the
+      // immune team's own Spy. (Do not skip the immune spy here.)
 
       const targetTeam = getTeam(action.target);
       if (!targetTeam || targetTeam.eliminated) continue;
@@ -169,7 +175,7 @@ export function resolveRound(game: Game): ResolutionResult {
   for (const team of activeTeams) {
     const action = getAction(team.id);
     if (!action || action.type !== 'trade' || !action.target) continue;
-    if (isImmune(team.id)) continue; // immune team's outgoing trade still works
+    // Immunity only protects against being TARGETED — the immune team's own Trade still works.
     if (sabotageTargets.has(team.id)) {
       // Will be logged when we check the pair
       continue;
@@ -317,6 +323,31 @@ export function resolveRound(game: Game): ResolutionResult {
     }
   }
 
+  // ── STEP 8: GM TOKEN LEDGER ───────────────────────────────────────────────────
+  // All bribe-token movement flows through the GM. Record it so the GM's log shows
+  // exactly how tokens were distributed this round. These lines are filtered out of
+  // the player-facing AI narration.
+  const bribeLabel = (power: string): string =>
+    BRIBE_MENU.find(b => b.power === power)?.label ?? power;
+  for (const bribe of currentBribes) {
+    const fromName = name(bribe.teamId);
+    if (bribe.status === 'approved') {
+      log.push(`${TOKEN_LEDGER_PREFIX} GM collected ${bribe.cost} token${bribe.cost === 1 ? '' : 's'} from ${fromName} for "${bribeLabel(bribe.power)}".`);
+      if (bribe.power === 'steal_token' && bribe.targetTeamId) {
+        log.push(`${TOKEN_LEDGER_PREFIX} GM transferred 1 token from ${name(bribe.targetTeamId)} to ${fromName}.`);
+      }
+      if (bribe.power === 'immunity') {
+        log.push(`${TOKEN_LEDGER_PREFIX} ${fromName} secured immunity for next round.`);
+      }
+    } else if (bribe.status === 'rejected') {
+      log.push(`${TOKEN_LEDGER_PREFIX} GM refunded ${bribe.cost} token${bribe.cost === 1 ? '' : 's'} to ${fromName} (rejected "${bribeLabel(bribe.power)}").`);
+    } else {
+      // Still pending at resolution — GM never actioned it, so the held tokens are
+      // auto-refunded in applyResolution. Surface that here.
+      log.push(`${TOKEN_LEDGER_PREFIX} ${fromName}'s "${bribeLabel(bribe.power)}" bribe was left unresolved — ${bribe.cost} token${bribe.cost === 1 ? '' : 's'} auto-refunded.`);
+    }
+  }
+
   return { tpDeltas, spyResults, log, eliminatedTeamIds, newTradePartners };
 }
 
@@ -355,6 +386,13 @@ export function applyResolution(game: Game, result: ResolutionResult, geminiSumm
   for (const bribe of immunityBribes) {
     const teamIdx = updatedTeams.findIndex(t => t.id === bribe.teamId);
     if (teamIdx >= 0) updatedTeams[teamIdx].immune = true;
+  }
+
+  // Auto-refund any bribe the GM never resolved — its tokens were deducted on request
+  // but the power never fired, so the team must get them back.
+  for (const bribe of game.currentBribes.filter(b => b.status === 'pending')) {
+    const teamIdx = updatedTeams.findIndex(t => t.id === bribe.teamId);
+    if (teamIdx >= 0) updatedTeams[teamIdx].bribes += bribe.cost;
   }
 
   const resolvedRound: ResolvedRound = {

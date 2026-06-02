@@ -9,7 +9,8 @@ export async function POST(req: NextRequest, { params }: { params: { gameCode: s
 
   const game = await getGameByGmToken(gmToken);
   if (!game || game.id !== gameCode) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  if (game.status !== 'round_active') return NextResponse.json({ error: 'Round is not active' }, { status: 400 });
+  // Two-phase resolve: the GM must Lock Actions first. Resolution happens from the locked state.
+  if (game.status !== 'round_locked') return NextResponse.json({ error: 'Lock actions before resolving the round' }, { status: 400 });
 
   const result = resolveRound(game);
 

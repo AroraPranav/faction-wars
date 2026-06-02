@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getGameByGmToken, saveGame } from '@/lib/kv';
+import { ACTION_META } from '@/lib/utils';
 
 export async function POST(req: NextRequest, { params }: { params: { gameCode: string } }) {
   const { gmToken, bribeId, approve } = await req.json();
@@ -25,6 +26,18 @@ export async function POST(req: NextRequest, { params }: { params: { gameCode: s
       t.id === bribe.teamId ? { ...t, bribes: t.bribes + bribe.cost } : t
     );
   } else {
+    // Force reveal: snapshot the target's current action so the briber (and only the
+    // briber) can see it immediately — works like a spy report, delivered on approval.
+    if (bribe.power === 'force_reveal' && bribe.targetTeamId) {
+      const targetAction = game.currentActions[bribe.targetTeamId];
+      updatedBribes[brideIdx] = {
+        ...updatedBribes[brideIdx],
+        revealedAction: targetAction
+          ? { type: targetAction.type, target: targetAction.target }
+          : undefined,
+      };
+    }
+
     // Apply immediate bribe effects
     if (bribe.power === 'steal_token' && bribe.targetTeamId) {
       // Steal 1 token from target (cannot reduce below 0)
@@ -39,15 +52,14 @@ export async function POST(req: NextRequest, { params }: { params: { gameCode: s
     }
 
     if (bribe.power === 'switch_action' && bribe.newAction) {
-      // Update the team's submitted action to the new one
-      // (Target/target2 cleared — GM should note team needs to resubmit target via dashboard)
-      const currentAction = game.currentActions[bribe.teamId];
+      // Replace the team's submitted action with the switched-to action + its new target.
+      // If the new action needs no target, drop any stale target so resolution stays correct.
+      const needsTarget = ACTION_META[bribe.newAction]?.needsTarget;
       const updatedActions = {
         ...game.currentActions,
         [bribe.teamId]: {
-          ...currentAction,
           type: bribe.newAction,
-          target: currentAction?.target,
+          target: needsTarget ? bribe.newTarget : undefined,
           submittedAt: Date.now(),
         },
       };

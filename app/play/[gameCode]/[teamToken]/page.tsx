@@ -25,6 +25,7 @@ export default function PlayPage({ params }: { params: { gameCode: string; teamT
   const [selectedBribe, setSelectedBribe] = useState('');
   const [brideTarget, setBribeTarget] = useState('');
   const [brideNewAction, setBribeNewAction] = useState('');
+  const [brideNewTarget, setBribeNewTarget] = useState('');
   const [bribeError, setBribeError] = useState('');
   const [bribeSuccess, setBribeSuccess] = useState('');
   const [bribeLoading, setBribeLoading] = useState(false);
@@ -107,6 +108,7 @@ export default function PlayPage({ params }: { params: { gameCode: string; teamT
           power: selectedBribe,
           targetTeamId: brideTarget || undefined,
           newAction: brideNewAction || undefined,
+          newTarget: brideNewTarget || undefined,
         }),
       });
       const data = await res.json();
@@ -115,6 +117,7 @@ export default function PlayPage({ params }: { params: { gameCode: string; teamT
       setSelectedBribe('');
       setBribeTarget('');
       setBribeNewAction('');
+      setBribeNewTarget('');
       await poll();
     } catch (e: unknown) {
       setBribeError(e instanceof Error ? e.message : 'Failed to send bribe');
@@ -300,9 +303,11 @@ export default function PlayPage({ params }: { params: { gameCode: string; teamT
     );
   }
 
-  // ── ROUND ACTIVE ─────────────────────────────────────────────────────────────
-  if (state.status === 'round_active') {
+  // ── ROUND ACTIVE / LOCKED ────────────────────────────────────────────────────
+  if (state.status === 'round_active' || state.status === 'round_locked') {
     const alreadySubmitted = state.hasSubmitted;
+    const locked = state.status === 'round_locked';
+    const canSwitch = state.worldEvent === 'chaos_market';
 
     return (
       <main className="min-h-screen flex flex-col px-4 py-6 gap-4 max-w-lg mx-auto">
@@ -311,6 +316,11 @@ export default function PlayPage({ params }: { params: { gameCode: string; teamT
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: myTeam.color }} />
             <span className="font-bold">{myTeam.name}</span>
+            {myTeam.immune && (
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full border border-blue-400/50 bg-blue-950/40 text-blue-300">
+                🛡️ Immune this round
+              </span>
+            )}
           </div>
           <div className="flex gap-3 text-sm">
             <span className="text-white/50">Round <span className="font-bold text-white">{state.currentRound}</span></span>
@@ -331,6 +341,35 @@ export default function PlayPage({ params }: { params: { gameCode: string; teamT
                 <p className="text-white/60 text-xs mt-0.5">{event.description}</p>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Locked banner */}
+        {locked && (
+          <div className="card border-[#F5A623]/40 bg-[#F5A623]/10 py-3">
+            <p className="font-bold text-[#F5A623] text-sm">🔒 Actions locked</p>
+            <p className="text-white/60 text-xs mt-0.5">
+              {canSwitch
+                ? 'The GM has locked the round. You can still pay 2 tokens to switch your action via the Bribe Menu below before resolution.'
+                : 'The GM has locked the round and is resolving it now.'}
+            </p>
+          </div>
+        )}
+
+        {/* Force-reveal intel — only the team that paid sees this */}
+        {state.forceRevealResults && state.forceRevealResults.length > 0 && (
+          <div className="card border-yellow-500/50 bg-yellow-950/30">
+            <p className="text-yellow-400 text-xs uppercase tracking-wider font-bold mb-2">📜 Forced Reveal — Intel</p>
+            {state.forceRevealResults.map((r, i) => (
+              <p key={i} className="text-sm py-1">
+                <span className="font-bold text-white">{state.teams.find(t => t.id === r.targetTeamId)?.name ?? 'Unknown'}</span>
+                <span className="text-white/60"> is playing </span>
+                <span className={`font-bold uppercase ${ACTION_META[r.actionType]?.color}`}>{r.actionType}</span>
+                {r.actionTarget && (
+                  <span className="text-white/60"> → {state.teams.find(t => t.id === r.actionTarget)?.name ?? 'Unknown'}</span>
+                )}
+              </p>
+            ))}
           </div>
         )}
 
@@ -412,13 +451,25 @@ export default function PlayPage({ params }: { params: { gameCode: string; teamT
           </div>
         )}
 
-        {/* Already submitted state */}
-        {alreadySubmitted ? (
-          <div className="card text-center py-8 border-green-500/30 bg-green-950/20">
-            <div className="text-3xl mb-2">✅</div>
-            <p className="font-bold text-green-400">Action submitted!</p>
-            <p className="text-white/40 text-sm mt-1">Waiting for the Game Master to resolve the round...</p>
-          </div>
+        {/* Already submitted / locked state */}
+        {(alreadySubmitted || locked) ? (
+          alreadySubmitted ? (
+            <div className="card text-center py-8 border-green-500/30 bg-green-950/20">
+              <div className="text-3xl mb-2">✅</div>
+              <p className="font-bold text-green-400">Action submitted!</p>
+              <p className="text-white/40 text-sm mt-1">
+                {locked && canSwitch
+                  ? 'Round is locked. You may still switch your action for 2 tokens below.'
+                  : 'Waiting for the Game Master to resolve the round...'}
+              </p>
+            </div>
+          ) : (
+            <div className="card text-center py-8 border-white/10">
+              <div className="text-3xl mb-2">🔒</div>
+              <p className="font-bold text-white/70">Round locked</p>
+              <p className="text-white/40 text-sm mt-1">You did not submit an action before the GM locked the round.</p>
+            </div>
+          )
         ) : (
           <>
             {/* Action cards */}
@@ -543,13 +594,17 @@ export default function PlayPage({ params }: { params: { gameCode: string; teamT
               {bribeSuccess && <p className="text-green-400 text-sm bg-green-950/30 p-2 rounded-lg">{bribeSuccess}</p>}
               {bribeError && <p className="text-red-400 text-sm">{bribeError}</p>}
 
-              <select className="input text-sm" value={selectedBribe} onChange={e => { setSelectedBribe(e.target.value); setBribeTarget(''); setBribeNewAction(''); }}>
+              <select className="input text-sm" value={selectedBribe} onChange={e => { setSelectedBribe(e.target.value); setBribeTarget(''); setBribeNewAction(''); setBribeNewTarget(''); }}>
                 <option value="">— Choose a power —</option>
-                {BRIBE_MENU.map(b => (
-                  <option key={b.power} value={b.power} disabled={myTeam.bribes < b.cost}>
-                    [{b.cost}🪙] {b.label}
-                  </option>
-                ))}
+                {BRIBE_MENU
+                  // The 2-token "switch your action" bribe is only offered during the Chaos
+                  // Market switch window (after the GM locks the round).
+                  .filter(b => b.power !== 'switch_action' || (canSwitch && locked))
+                  .map(b => (
+                    <option key={b.power} value={b.power} disabled={myTeam.bribes < b.cost}>
+                      [{b.cost}🪙] {b.label}
+                    </option>
+                  ))}
               </select>
 
               {selectedBribe && (
@@ -564,18 +619,34 @@ export default function PlayPage({ params }: { params: { gameCode: string; teamT
                 </select>
               )}
 
-              {/* New action for switch_action */}
+              {/* New action (and new target) for switch_action */}
               {selectedBribe === 'switch_action' && (
-                <select className="input text-sm" value={brideNewAction} onChange={e => setBribeNewAction(e.target.value)}>
-                  <option value="">— Switch to... —</option>
-                  {Object.keys(ACTION_META).map(a => <option key={a} value={a}>{a.toUpperCase()}</option>)}
-                </select>
+                <>
+                  <select className="input text-sm" value={brideNewAction} onChange={e => { setBribeNewAction(e.target.value); setBribeNewTarget(''); }}>
+                    <option value="">— Switch to... —</option>
+                    {Object.keys(ACTION_META).map(a => <option key={a} value={a}>{a.toUpperCase()}</option>)}
+                  </select>
+                  {brideNewAction && ACTION_META[brideNewAction as ActionType]?.needsTarget && (
+                    <select className="input text-sm" value={brideNewTarget} onChange={e => setBribeNewTarget(e.target.value)}>
+                      <option value="">— {brideNewAction === 'trade' ? 'Trade partner' : 'New target'} —</option>
+                      {otherTeams
+                        .filter(t => !(brideNewAction === 'attack' && myTeam.tradePartners.includes(t.id)))
+                        .map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                    </select>
+                  )}
+                </>
               )}
 
               <button
                 className="btn-primary w-full py-2 text-sm"
                 onClick={submitBribe}
-                disabled={!selectedBribe || bribeLoading || myTeam.bribes < (BRIBE_MENU.find(b => b.power === selectedBribe)?.cost ?? 99)}
+                disabled={
+                  !selectedBribe ||
+                  bribeLoading ||
+                  myTeam.bribes < (BRIBE_MENU.find(b => b.power === selectedBribe)?.cost ?? 99) ||
+                  (['learn_last_action', 'force_reveal', 'steal_token'].includes(selectedBribe) && !brideTarget) ||
+                  (selectedBribe === 'switch_action' && (!brideNewAction || (ACTION_META[brideNewAction as ActionType]?.needsTarget && !brideNewTarget)))
+                }
               >
                 {bribeLoading ? 'Sending...' : 'Send Bribe Request 🪙'}
               </button>

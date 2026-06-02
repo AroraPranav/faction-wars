@@ -1,5 +1,5 @@
 export type ActionType = 'attack' | 'defend' | 'spy' | 'sabotage' | 'trade' | 'reinforce';
-export type GameStatus = 'lobby' | 'round_setup' | 'round_active' | 'round_resolved' | 'finished';
+export type GameStatus = 'lobby' | 'round_setup' | 'round_active' | 'round_locked' | 'round_resolved' | 'finished';
 export type BribePower =
   | 'learn_last_action'
   | 'switch_action'
@@ -34,6 +34,8 @@ export interface BribeRequest {
   power: BribePower;
   targetTeamId?: string;
   newAction?: ActionType;    // for switch_action
+  newTarget?: string;        // for switch_action — new target (teamId) when the switched-to action needs one
+  revealedAction?: { type: ActionType; target?: string }; // for force_reveal — snapshot of target's action at GM approval
   cost: number;
   status: 'pending' | 'approved' | 'rejected';
   createdAt: number;
@@ -128,4 +130,6 @@ export interface TeamGameState {
   counterIntelInfo?: boolean;   // you were spied on (Counter Intel event)
   pointsVisible: boolean;       // when false, hide all TP / standings / deltas from players
   spyIntelNarration?: string;   // Hinglish narration for the spy
+  // Force-reveal intel — only delivered to the team that paid for it, as soon as the GM approves.
+  forceRevealResults?: Array<{ targetTeamId: string; actionType: ActionType; actionTarget?: string }>;
 }

@@ -64,6 +64,16 @@ export default function GMPage({ params }: { params: { gmToken: string } }) {
     }
   }
 
+  async function lockRound(unlock = false) {
+    if (!game) return;
+    await fetch(`/api/game/${gameCode}/lock-round`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ gmToken, unlock }),
+    });
+    await fetchGame();
+  }
+
   async function resolveRound() {
     if (!game) return;
     setResolving(true);
@@ -175,6 +185,10 @@ export default function GMPage({ params }: { params: { gmToken: string } }) {
   const sorted = [...game.teams].sort((a, b) => b.tp - a.tp);
   const lastRound = game.roundHistory[game.roundHistory.length - 1];
   const pendingBribes = game.currentBribes.filter(b => b.status === 'pending');
+  // Approved force-reveals — what each briber privately received, so the GM can confirm/relay it.
+  const approvedReveals = game.currentBribes.filter(
+    b => b.power === 'force_reveal' && b.status === 'approved' && b.revealedAction
+  );
   const event = getEvent(game.currentWorldEvent);
 
   // ── SCOREBOARD ────────────────────────────────────────────────────────────────
@@ -341,10 +355,11 @@ export default function GMPage({ params }: { params: { gmToken: string } }) {
       );
     }
 
-    if (game.status === 'round_active') {
+    if (game.status === 'round_active' || game.status === 'round_locked') {
       const totalActive = activeTeams.length;
       const submitted = Object.keys(game.currentActions).length;
       const allSubmitted = submitted >= totalActive;
+      const locked = game.status === 'round_locked';
 
       return (
         <div className="space-y-4">
@@ -352,10 +367,11 @@ export default function GMPage({ params }: { params: { gmToken: string } }) {
           <div className="card">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-bold text-[#4F6EF5]">Round {game.currentRound} — Active</h3>
+                <h3 className="font-bold text-[#4F6EF5]">Round {game.currentRound} — {locked ? 'Locked' : 'Active'}</h3>
                 <p className="text-white/40 text-sm mt-0.5">
                   {submitted}/{totalActive} factions submitted
                   {allSubmitted && <span className="text-green-400 font-bold"> — All in!</span>}
+                  {locked && <span className="text-[#F5A623] font-bold"> — actions locked</span>}
                 </p>
               </div>
               {game.currentWorldEvent && game.currentWorldEvent !== 'none' && (
@@ -433,7 +449,12 @@ export default function GMPage({ params }: { params: { gmToken: string } }) {
                         </div>
                         <p className="text-white/70 text-sm">{menuItem?.label}</p>
                         {target && <p className="text-white/40 text-xs">→ targeting {target.name}</p>}
-                        {bribe.newAction && <p className="text-white/40 text-xs">→ switch to {bribe.newAction.toUpperCase()}</p>}
+                        {bribe.newAction && (
+                          <p className="text-white/40 text-xs">
+                            → switch to {bribe.newAction.toUpperCase()}
+                            {bribe.newTarget ? ` → ${game.teams.find(t => t.id === bribe.newTarget)?.name}` : ''}
+                          </p>
+                        )}
                         {bribe.power === 'learn_last_action' && (() => {
                           const lastAction = lastRound?.actions[bribe.targetTeamId ?? ''];
                           return lastAction ? (
@@ -449,6 +470,33 @@ export default function GMPage({ params }: { params: { gmToken: string } }) {
                         <button className="btn-danger text-xs px-3 py-1.5 inline-flex items-center gap-1" onClick={() => respondBribe(bribe.id, false)}><XIcon size={12} /> Reject</button>
                       </div>
                     </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Approved force-reveals — what each briber privately received */}
+          {approvedReveals.length > 0 && (
+            <div className="card border-yellow-500/30 bg-yellow-950/20">
+              <p className="text-yellow-400 text-xs font-bold uppercase tracking-wider mb-2 inline-flex items-center gap-1.5">
+                <Spyglass size={13} /> Approved Force Reveals
+              </p>
+              <p className="text-white/30 text-[11px] mb-2">Only the buyer sees this in-app — relay it privately if it doesn&apos;t reach them.</p>
+              {approvedReveals.map(b => {
+                const buyer = game.teams.find(t => t.id === b.teamId);
+                const target = game.teams.find(t => t.id === b.targetTeamId);
+                const ra = b.revealedAction!;
+                return (
+                  <div key={b.id} className="text-sm py-1.5 border-b border-yellow-500/10 last:border-0">
+                    <span className="font-bold text-yellow-300">{buyer?.name}</span>
+                    <span className="text-white/40"> learned </span>
+                    <span className="font-bold text-white">{target?.name}</span>
+                    <span className="text-white/40"> → </span>
+                    <span className={`font-bold uppercase ${ACTION_META[ra.type]?.color}`}>{ra.type}</span>
+                    {ra.target && (
+                      <span className="text-white/40"> targeting {game.teams.find(t => t.id === ra.target)?.name}</span>
+                    )}
                   </div>
                 );
               })}
@@ -487,26 +535,53 @@ export default function GMPage({ params }: { params: { gmToken: string } }) {
             </div>
           )}
 
-          {/* Resolve button */}
-          <div className="space-y-2">
-            {game.settings.geminiKey && (
-              <label className="flex items-center gap-2 text-sm text-white/60 cursor-pointer">
-                <input type="checkbox" checked={useGemini} onChange={e => setUseGemini(e.target.checked)} className="accent-[#4F6EF5]" />
-                Generate AI dramatic summary (Gemini)
-              </label>
-            )}
-            <button
-              className={`w-full py-3 rounded-xl font-bold text-base transition-all inline-flex items-center justify-center gap-2 ${
-                allSubmitted ? 'btn-primary' : 'bg-white/10 hover:bg-white/20 text-white/70'
-              }`}
-              onClick={resolveRound}
-              disabled={resolving}
-            >
-              {resolving
-                ? <><Gear size={16} className="animate-spin" /> Resolving…</>
-                : <><Bolt size={16} /> Resolve Round {game.currentRound}{!allSubmitted ? ` (${totalActive - submitted} missing)` : ''}</>}
-            </button>
-          </div>
+          {/* Lock / Resolve controls (two-phase) */}
+          {!locked ? (
+            <div className="space-y-2">
+              <p className="text-white/40 text-xs">
+                Lock actions to open the {game.currentWorldEvent === 'chaos_market' ? 'Chaos Market switch window' : 'final review'}. No new submissions are accepted once locked.
+              </p>
+              <button
+                className={`w-full py-3 rounded-xl font-bold text-base transition-all inline-flex items-center justify-center gap-2 ${
+                  allSubmitted ? 'btn-primary' : 'bg-white/10 hover:bg-white/20 text-white/70'
+                }`}
+                onClick={() => lockRound(false)}
+              >
+                <Shield size={16} /> Lock Actions{!allSubmitted ? ` (${totalActive - submitted} missing)` : ''}
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <p className="text-[#F5A623] text-xs inline-flex items-center gap-1.5">
+                <Warning size={13} /> Actions locked. {game.currentWorldEvent === 'chaos_market' ? 'Teams may still pay 2 tokens to switch — approve any switch bribes above before resolving.' : 'Approve any pending bribes, then resolve.'}
+              </p>
+              {game.settings.geminiKey && (
+                <label className="flex items-center gap-2 text-sm text-white/60 cursor-pointer">
+                  <input type="checkbox" checked={useGemini} onChange={e => setUseGemini(e.target.checked)} className="accent-[#4F6EF5]" />
+                  Generate AI dramatic summary (Gemini)
+                </label>
+              )}
+              <div className="flex gap-2">
+                <button
+                  className="btn-secondary py-3 px-4 inline-flex items-center justify-center gap-1.5"
+                  onClick={() => lockRound(true)}
+                  disabled={resolving}
+                  title="Reopen the round for submissions"
+                >
+                  <Undo size={14} /> Reopen
+                </button>
+                <button
+                  className="btn-primary flex-1 py-3 inline-flex items-center justify-center gap-2"
+                  onClick={resolveRound}
+                  disabled={resolving}
+                >
+                  {resolving
+                    ? <><Gear size={16} className="animate-spin" /> Resolving…</>
+                    : <><Bolt size={16} /> Resolve Round {game.currentRound}</>}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       );
     }
@@ -726,11 +801,13 @@ export default function GMPage({ params }: { params: { gmToken: string } }) {
     game.status === 'lobby' ? 'Lobby' :
     game.status === 'round_setup' ? 'Round setup' :
     game.status === 'round_active' ? 'Round active' :
+    game.status === 'round_locked' ? 'Round locked' :
     game.status === 'round_resolved' ? 'Round resolved' :
     game.status === 'finished' ? 'Finished' : game.status;
 
   const statusDot =
     game.status === 'round_active' ? 'bg-emerald-400' :
+    game.status === 'round_locked' ? 'bg-[#F5A623]' :
     game.status === 'round_resolved' ? 'bg-amber-400' :
     game.status === 'finished' ? 'bg-purple-400' :
     'bg-white/40';

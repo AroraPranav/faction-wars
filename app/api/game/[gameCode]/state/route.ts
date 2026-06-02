@@ -42,9 +42,22 @@ export async function GET(req: NextRequest, { params }: { params: { gameCode: st
     // so they cannot peek at others' plans before committing.
     const exposedActions =
       game.currentWorldEvent === 'exposed_plans' &&
-      game.status === 'round_active' &&
+      (game.status === 'round_active' || game.status === 'round_locked') &&
       !!game.currentActions[teamId]
         ? game.currentActions
+        : undefined;
+
+    // Force-reveal intel — delivered only to the team that paid for it, during the round,
+    // as soon as the GM approves. Works like a private spy report.
+    const forceRevealResults =
+      (game.status === 'round_active' || game.status === 'round_locked')
+        ? game.currentBribes
+            .filter(b => b.teamId === teamId && b.power === 'force_reveal' && b.status === 'approved' && b.revealedAction)
+            .map(b => ({
+              targetTeamId: b.targetTeamId!,
+              actionType: b.revealedAction!.type,
+              actionTarget: b.revealedAction!.target,
+            }))
         : undefined;
 
     const response: TeamGameState = {
@@ -81,6 +94,7 @@ export async function GET(req: NextRequest, { params }: { params: { gameCode: st
       counterspyInfo: game.status === 'round_resolved' ? counterspyInfo : null,
       counterIntelInfo: game.status === 'round_resolved' ? counterIntelInfo : false,
       pointsVisible: game.pointsVisible,
+      forceRevealResults: forceRevealResults && forceRevealResults.length > 0 ? forceRevealResults : undefined,
     };
 
     return NextResponse.json(response);
