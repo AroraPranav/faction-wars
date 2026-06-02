@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getGame, getGameByGmToken, getGameByTeamToken } from '@/lib/kv';
-import { TeamGameState } from '@/lib/types';
+import { ActionType, TeamGameState } from '@/lib/types';
 
 // GM state — returns everything
 export async function GET(req: NextRequest, { params }: { params: { gameCode: string } }) {
@@ -47,17 +47,21 @@ export async function GET(req: NextRequest, { params }: { params: { gameCode: st
         ? game.currentActions
         : undefined;
 
-    // Force-reveal intel — delivered only to the team that paid for it, during the round,
-    // as soon as the GM approves. Works like a private spy report.
+    // Force-reveal intel — delivered only to the team that paid for it, during the round.
+    // Read the target's action LIVE so the buyer sees it regardless of whether the target
+    // had submitted when the GM approved (and tracks any later switch). Falls back to the
+    // snapshot taken at approval if the target's live action is somehow missing.
     const forceRevealResults =
       (game.status === 'round_active' || game.status === 'round_locked')
         ? game.currentBribes
-            .filter(b => b.teamId === teamId && b.power === 'force_reveal' && b.status === 'approved' && b.revealedAction)
-            .map(b => ({
-              targetTeamId: b.targetTeamId!,
-              actionType: b.revealedAction!.type,
-              actionTarget: b.revealedAction!.target,
-            }))
+            .filter(b => b.teamId === teamId && b.power === 'force_reveal' && b.status === 'approved' && b.targetTeamId)
+            .map((b): { targetTeamId: string; actionType: ActionType; actionTarget?: string } | null => {
+              const action = game.currentActions[b.targetTeamId!] ?? b.revealedAction;
+              return action
+                ? { targetTeamId: b.targetTeamId!, actionType: action.type, actionTarget: action.target }
+                : null;
+            })
+            .filter((r): r is { targetTeamId: string; actionType: ActionType; actionTarget?: string } => r !== null)
         : undefined;
 
     const response: TeamGameState = {
