@@ -71,7 +71,7 @@ Current standings: ${standings}
 
 **TOTAL ANONYMITY — this is the single most important rule.** This game lives or dies on bluffing and deduction. The narration is a riddle, NOT a report. When a player reads it, they must NOT be able to tell whether a described event happened to THEM, to a rival, or to nobody in particular. Keep EVERY team guessing.
 
-**NAME NO ONE — neither attacker, victim, saboteur, spy, nor target.** Do not name a team for any attack, sabotage, spy, failed trade, defend, or reinforce. Refer to all parties only through anonymous, atmospheric phrasing so that even the team it happened to is left wondering "wait… was that me?":
+**NAME NO ONE — neither attacker, victim, saboteur, spy, nor target.** Do not name a team for any attack, sabotage, spy, failed trade, or defend. Refer to all parties only through anonymous, atmospheric phrasing so that even the team it happened to is left wondering "wait… was that me?":
   • actors: "kisi ne", "anjaan haathon se", "ek chhupa hua khiladi", "parde ke peeche se"
   • events: "ek vaar hua", "ek ghaat lagayi gayi", "ek saazish kaamyab hui", "kisi ki dhal kaam aayi", "ek yojana tut gayi", "saaye mein koi nazar rakh raha tha"
   • Speak in counts and rumors, never identities: "do vaar hue, dono ka anjaam alag", "kahin khabar leak hui — par kiski, kisne, ye raaz hai".

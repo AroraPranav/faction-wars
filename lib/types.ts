@@ -1,4 +1,4 @@
-export type ActionType = 'attack' | 'defend' | 'spy' | 'sabotage' | 'trade' | 'reinforce';
+export type ActionType = 'attack' | 'defend' | 'spy' | 'sabotage' | 'trade';
 export type GameStatus = 'lobby' | 'round_setup' | 'round_active' | 'round_locked' | 'round_resolved' | 'finished';
 export type BribePower =
   | 'learn_last_action'

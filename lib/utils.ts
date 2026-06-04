@@ -29,7 +29,6 @@ export const ACTION_META: Record<string, { label: string; color: string; border:
   spy:       { label: 'SPY',       color: 'text-blue-400',   border: 'border-blue-500',   bg: 'bg-blue-950/40',   desc: 'Learn what action a target faction submitted.',   needsTarget: true  },
   sabotage:  { label: 'SABOTAGE',  color: 'text-yellow-400', border: 'border-yellow-500', bg: 'bg-yellow-950/40', desc: "Disrupt a target faction's action, cancelling it.", needsTarget: true  },
   trade:     { label: 'TRADE',     color: 'text-purple-400', border: 'border-purple-500', bg: 'bg-purple-950/40', desc: 'Cooperate — both factions gain +1 TP (must be mutual).', needsTarget: true  },
-  reinforce: { label: 'REINFORCE', color: 'text-cyan-400',   border: 'border-cyan-500',   bg: 'bg-cyan-950/40',   desc: 'Brace against Sabotage — blocks it (but not Attacks).', needsTarget: false },
 };
 
 export const BRIBE_MENU = [

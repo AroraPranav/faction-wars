@@ -117,7 +117,7 @@ export const WORLD_EVENTS: WorldEventDef[] = [
   {
     id: 'saboteurs_echo',
     name: "Saboteur's Echo",
-    description: "Sabotage fails against Reinforce → you steal 1 TP anyway as consolation.",
+    description: "Sabotage a Defender and you steal 1 TP from them as a bonus.",
     emoji: '🔊',
   },
   {

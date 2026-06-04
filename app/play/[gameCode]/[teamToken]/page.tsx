@@ -481,7 +481,7 @@ export default function PlayPage({ params }: { params: { gameCode: string; teamT
                     // Civil Unrest: a public declaration restricts which actions are allowed.
                     const allowedByDeclaration: Record<Declaration, ActionType[]> = {
                       offensive: ['attack', 'sabotage'],
-                      defensive: ['defend', 'reinforce'],
+                      defensive: ['defend'],
                       neutral: ['spy', 'trade'],
                     };
                     const disabled =
