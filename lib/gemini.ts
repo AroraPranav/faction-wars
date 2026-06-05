@@ -56,7 +56,7 @@ export async function generateRoundSummary(
     .map(t => `${t.name}: ${round.tpAfter[t.id] ?? t.tp} TP${t.eliminated ? ' (ELIMINATED)' : ''}`)
     .join(', ');
 
-  const prompt = `You are a dramatic Bollywood-style war chronicler narrating Round ${round.roundNumber} of the strategic game "Faction Wars" to the players in their WhatsApp group. The audience is Hindi-speaking Indians — write the narration in **Hinglish** (natural casual mix of Hindi in Roman script + English, like how friends actually text). Tone: cinematic Bollywood war movie voiceover — drama, betrayal, suspense, mystery.
+  const prompt = `You are a dramatic Bollywood-style war chronicler narrating Round ${round.roundNumber} of the strategic game "Faction Wars" to the players in their WhatsApp group. The audience is Hindi-speaking Indians — write the narration in **Hinglish** (natural casual mix of Hindi in Roman script + English, like how friends actually text). Tone: cinematic Bollywood war movie voiceover with a masaledaar comedic kick — drama, betrayal, suspense, AND laughs. Think Sholay narrator who's also a little bit nautanki. Roast the chaos, don't just whisper about it.
 
 ${eventLine}
 
@@ -69,12 +69,12 @@ Current standings: ${standings}
 
 ═══ CRITICAL STYLE RULES ═══
 
-**TOTAL ANONYMITY — this is the single most important rule.** This game lives or dies on bluffing and deduction. The narration is a riddle, NOT a report. When a player reads it, they must NOT be able to tell whether a described event happened to THEM, to a rival, or to nobody in particular. Keep EVERY team guessing.
+**ANONYMITY OF IDENTITY, NOT OF EVENTS — this is the single most important rule.** This game lives or dies on bluffing and deduction. Hide WHO did it and WHO got hit — never hide THAT it happened. Every event in the GM log is REAL and must land as a concrete, vivid, consequential blow. Do NOT water events into "maybe something happened to maybe someone" mush — that's boring and toothless. The reader should feel the punch land hard in the dark, fully convinced it was brutal and real, while still unable to tell if the victim was THEM or a rival. Keep every team guessing about identity, never about whether the carnage occurred.
 
 **NAME NO ONE — neither attacker, victim, saboteur, spy, nor target.** Do not name a team for any attack, sabotage, spy, failed trade, or defend. Refer to all parties only through anonymous, atmospheric phrasing so that even the team it happened to is left wondering "wait… was that me?":
   • actors: "kisi ne", "anjaan haathon se", "ek chhupa hua khiladi", "parde ke peeche se"
-  • events: "ek vaar hua", "ek ghaat lagayi gayi", "ek saazish kaamyab hui", "kisi ki dhal kaam aayi", "ek yojana tut gayi", "saaye mein koi nazar rakh raha tha"
-  • Speak in counts and rumors, never identities: "do vaar hue, dono ka anjaam alag", "kahin khabar leak hui — par kiski, kisne, ye raaz hai".
+  • events: "ek vaar seedha kaleje pe pada", "ek ghaat aisi lagi ki shikaar tadap gaya", "ek saazish poori tarah kaamyab hui", "ek dhal aakhri waqt pe kaam aa gayi", "ek yojana muh ke bal gir padi", "saaye mein ankhein gadi thi har chaal pe"
+  • Speak in counts and consequences, never identities — but make the count and the damage VIVID and definite: "do vaar hue, ek ne haddi tod di, doosra apni hi talwar pe ja gira", "khabar leak hui — par kiski, kisne, ye gaddari ka maza alag hi tha".
 
 **The ONLY exceptions where a team may be named:**
 - ✅ A SUCCESSFUL Trade between two teams (both consented openly — UNLESS the event is Silent Trade, then stay anonymous).
@@ -84,13 +84,14 @@ Everything else stays nameless — including who got attacked. Describe the BLOW
 **Other rules:**
 1. Mix Hindi (Roman script) and English naturally — don't lean too heavy on either. Bollywood vocabulary welcome: "jang", "vaar", "dhokha", "sazish", "ghaat", "chaal", "talwar", "khoon", "raaz", "andhera", "saaya", "ant".
 2. **DO NOT list TP changes mechanically.** Weave outcomes into the story as rumor and consequence, never as a scoreboard.
-3. Keep numbers vague — "kuch teams kamzor padi", not "Alpha lost 2".
-4. End with one short hook sentence about the gathering suspicion or chaos — without naming who leads or exact TP values.
-5. Plain flowing prose. No bullet points, no markdown, no asterisks. Under 140 words.
-6. 4-6 sentences total.
+3. Keep exact numbers hidden — but make the DAMAGE concrete and felt. "Ek team ki kamar tut gayi" beats "kuch hua". Never reveal exact TP or whose, but never pretend the hit was soft either.
+4. **Bring the comedy.** At least one line should make the group laugh — a savage roast, a cocky plan that backfired hilariously, a "betrayer ne khud ka hi gala kaat liya" moment, a dramatic over-the-top metaphor that's clearly tongue-in-cheek. Drama + tamasha, not a funeral.
+5. End with one punchy hook line about the brewing paranoia or chaos — make it sting and grin at the same time, without naming who leads or exact TP values.
+6. Plain flowing prose. No bullet points, no markdown, no asterisks. Under 140 words.
+7. 4-6 sentences total.
 
-Inspiration tone (style only — do NOT copy, and note how NO team is named):
-"Round ${round.roundNumber} ki raat khaamosh nahi rahi. Andhere mein ek vaar chala — kis par, ye sirf shikaar aur shikari jaante hain. Ek mez ke neeche se ghaat lagayi gayi, par jiska nuksaan hua woh bhi shayad samajh na paaye ki ye kiska kaam tha. Kahin ek dhal mazboot nikli, kahin ek yojana bikhar gayi. Saaye mein nazar rakhi gayi — par kis pe, ye raaz parde ke peeche hi dafan hai. Aaj har koi apne padosi ko shakk ki nigah se dekh raha hai."`;
+Inspiration tone (style only — do NOT copy; note how NO team is named, yet every event is concrete, brutal AND funny):
+"Round ${round.roundNumber} ki raat ne kisi ko sona nahi diya. Andhere mein ek vaar aisa pada ki ek team abhi tak haddiyan gin rahi hogi — kis par? Bas shikaar aur shikari jaante hain, baaki sab apni-apni list bana rahe hain. Ek mahaan strategist ne badi soch ke chaal chali, aur seedha apne hi paer pe kulhaadi maar baitha — wah ustad, kya plan tha. Ek dhal aakhri second pe kaam aa gayi, warna aaj ek aur arthi uth jaati. Aur kahin saaye mein kisi ne sab kuch dekh liya — ab woh muskura raha hai, aur tum so nahi paoge. Bhaiyon, kisi pe bharosa mat karna, padosi sabse pehle gaddari karega."`;
 
   return callGemini(apiKey, prompt, 0.9);
 }
